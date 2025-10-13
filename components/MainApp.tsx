@@ -8,6 +8,7 @@ import AskAiPanel from './AskAiPanel';
 import { FilmIcon } from './icons/FilmIcon';
 import { SettingsIcon } from './icons/SettingsIcon';
 import { LogoutIcon } from './icons/LogoutIcon';
+import { TrashIcon } from './icons/TrashIcon';
 import { User, authService, VideoData } from '../services/authService';
 import { videoDBService } from '../services/videoDBService';
 
@@ -77,6 +78,20 @@ const MainApp: React.FC<MainAppProps> = ({ user, onLogout }) => {
   const handleBackToGallery = useCallback(() => {
     setSelectedVideo(null);
   }, []);
+
+  const handleDeleteVideo = useCallback(async (videoId: string) => {
+    try {
+        const updatedUser = await authService.deleteVideoForCurrentUser(videoId);
+        setVideos(updatedUser.videos);
+        // If the deleted video was the one being viewed, go back to the gallery
+        if(selectedVideo?.id === videoId) {
+            setSelectedVideo(null);
+        }
+    } catch (error) {
+        console.error("Failed to delete video:", error);
+        alert("There was an error deleting the video. Please try again.");
+    }
+  }, [selectedVideo]);
   
   const [videoUrlForRender, setVideoUrlForRender] = useState<string | null>(null);
 
@@ -167,17 +182,28 @@ const MainApp: React.FC<MainAppProps> = ({ user, onLogout }) => {
                     <AskAiPanel video={selectedVideo} />
                   </div>
                 </div>
-                <div className="flex justify-center mt-8">
+                <div className="flex justify-center items-center gap-4 mt-8">
                   <button
                     onClick={handleBackToGallery}
                     className="bg-cyan-500 hover:bg-cyan-600 text-white font-semibold py-2 px-6 rounded-lg transition-colors duration-300 shadow-lg shadow-cyan-500/20"
                   >
                     Back to Gallery
                   </button>
+                   <button
+                    onClick={() => {
+                        if (window.confirm('Are you sure you want to delete this video? This action cannot be undone.')) {
+                            handleDeleteVideo(selectedVideo.id);
+                        }
+                    }}
+                    className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300 shadow-lg shadow-red-500/20"
+                  >
+                    <TrashIcon className="w-5 h-5" />
+                    Delete Video
+                  </button>
                 </div>
              </div>
           ) : videos.length > 0 && !isUploading ? (
-             <VideoGallery videos={videos} onSelectVideo={handleSelectVideo} onUploadClick={() => setIsUploading(true)} />
+             <VideoGallery videos={videos} onSelectVideo={handleSelectVideo} onUploadClick={() => setIsUploading(true)} onDeleteVideo={handleDeleteVideo} />
           ) : (
             <VideoUploader onVideoUpload={handleVideoUpload} />
           )}

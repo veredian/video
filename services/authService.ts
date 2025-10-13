@@ -113,5 +113,38 @@ export const authService = {
         reject(new Error("Current user not found"));
       }
     });
+  },
+
+  deleteVideoForCurrentUser: (videoId: string): Promise<User> => {
+    return new Promise(async (resolve, reject) => {
+        const userEmail = localStorage.getItem(CURRENT_USER_KEY);
+        if (!userEmail) return reject(new Error("No user logged in"));
+
+        const users = getUsers();
+        const user = users[userEmail];
+        if (user) {
+            const videoIndex = user.videos.findIndex(v => v.id === videoId);
+            if (videoIndex === -1) {
+                return reject(new Error("Video not found for this user."));
+            }
+            
+            try {
+                // First remove from DB
+                await videoDBService.deleteVideo(videoId);
+                
+                // Then remove from user's video list in localStorage
+                user.videos.splice(videoIndex, 1);
+                saveUsers(users);
+                
+                const { password, ...userWithoutPassword } = user;
+                resolve(userWithoutPassword);
+            } catch (error) {
+                console.error("Failed to delete video:", error);
+                reject(new Error("Could not delete video file."));
+            }
+        } else {
+            reject(new Error("Current user not found"));
+        }
+    });
   }
 };
