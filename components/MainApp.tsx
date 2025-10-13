@@ -5,7 +5,7 @@ import ShareOptions from './ShareOptions';
 import SettingsModal from './SettingsModal';
 import VideoGallery from './VideoGallery';
 import AskAiPanel from './AskAiPanel';
-import { FilmIcon } from './icons/FilmIcon';
+import { Logo } from './icons/Logo';
 import { SettingsIcon } from './icons/SettingsIcon';
 import { LogoutIcon } from './icons/LogoutIcon';
 import { TrashIcon } from './icons/TrashIcon';
@@ -138,7 +138,7 @@ const MainApp: React.FC<MainAppProps> = ({ user, onLogout }) => {
       <div className="w-full max-w-6xl mx-auto">
         <header className="flex items-center justify-between mb-8 w-full">
             <div className="flex items-center gap-3">
-              <FilmIcon className="w-10 h-10 text-cyan-500" />
+              <Logo className="w-16 h-auto" />
               <h1 className="hidden sm:block text-3xl font-bold tracking-tight bg-gradient-to-r from-cyan-500 to-blue-500 text-transparent bg-clip-text">
                 Video Hub
               </h1>
@@ -217,6 +217,7 @@ const MainApp: React.FC<MainAppProps> = ({ user, onLogout }) => {
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
         settings={settings}
+        // FIX: The prop is 'onSettingsChange', not 'onSettings-change'.
         onSettingsChange={setSettings}
       />
     </div>

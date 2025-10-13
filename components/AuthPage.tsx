@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { authService, User } from '../services/authService';
-import { FilmIcon } from './icons/FilmIcon';
+import { Logo } from './icons/Logo';
 import { SpinnerIcon } from './icons/SpinnerIcon';
 import VerificationModal from './VerificationModal';
+import { EyeIcon } from './icons/EyeIcon';
+import { EyeSlashIcon } from './icons/EyeSlashIcon';
 
 interface AuthPageProps {
   onLogin: (user: User) => void;
@@ -14,10 +16,22 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
   const [mode, setMode] = useState<AuthMode>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [showVerification, setShowVerification] = useState(false);
+
+  useEffect(() => {
+    if (mode === 'login') {
+      const rememberedEmail = authService.getRememberedUser();
+      if (rememberedEmail) {
+        setEmail(rememberedEmail);
+        setRememberMe(true);
+      }
+    }
+  }, [mode]);
 
   const handleAuthAction = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,7 +40,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
     setSuccessMessage('');
 
     if (mode === 'login') {
-      const result = await authService.login(email, password);
+      const result = await authService.login(email, password, rememberMe);
       if (result.success && result.user) {
         onLogin(result.user);
       } else {
@@ -58,6 +72,8 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
     setSuccessMessage('');
     setEmail('');
     setPassword('');
+    setRememberMe(false);
+    setShowPassword(false);
   }
 
   return (
@@ -65,7 +81,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
         <div className="w-full max-w-md">
             <header className="text-center mb-8">
                 <div className="flex items-center justify-center gap-3 mb-4">
-                    <FilmIcon className="w-10 h-10 text-cyan-500" />
+                    <Logo className="w-16 h-auto" />
                     <h1 className="text-4xl sm:text-5xl font-bold tracking-tight bg-gradient-to-r from-cyan-500 to-blue-500 text-transparent bg-clip-text">
                         Video Hub
                     </h1>
@@ -102,19 +118,52 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
                     </div>
                     <div>
                         <label htmlFor="password"  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Password</label>
-                        <input
-                            id="password"
-                            name="password"
-                            type="password"
-                            autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-                            required
-                            minLength={6}
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-cyan-500 focus:border-cyan-500"
-                            placeholder="••••••••"
-                        />
+                        <div className="relative">
+                            <input
+                                id="password"
+                                name="password"
+                                type={showPassword ? 'text' : 'password'}
+                                autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+                                required
+                                minLength={6}
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                className="w-full px-3 py-2 pr-10 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-cyan-500 focus:border-cyan-500"
+                                placeholder="••••••••"
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+                                aria-label={showPassword ? "Hide password" : "Show password"}
+                            >
+                                {showPassword ? (
+                                    <EyeSlashIcon className="h-5 w-5" />
+                                ) : (
+                                    <EyeIcon className="h-5 w-5" />
+                                )}
+                            </button>
+                        </div>
                     </div>
+                    
+                    {mode === 'login' && (
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center">
+                                <input
+                                id="remember-me"
+                                name="remember-me"
+                                type="checkbox"
+                                checked={rememberMe}
+                                onChange={(e) => setRememberMe(e.target.checked)}
+                                className="h-4 w-4 text-cyan-600 focus:ring-cyan-500 border-gray-300 dark:border-gray-600 rounded bg-gray-50 dark:bg-gray-700"
+                                />
+                                <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900 dark:text-gray-300">
+                                Remember me
+                                </label>
+                            </div>
+                        </div>
+                    )}
+
 
                     {error && <p className="text-sm text-red-500 text-center">{error}</p>}
                     {successMessage && <p className="text-sm text-green-500 text-center">{successMessage}</p>}

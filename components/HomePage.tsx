@@ -1,5 +1,5 @@
 import React from 'react';
-import { FilmIcon } from './icons/FilmIcon';
+import { Logo } from './icons/Logo';
 
 interface HomePageProps {
   onEnter: () => void;
@@ -10,8 +10,8 @@ const HomePage: React.FC<HomePageProps> = ({ onEnter }) => {
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-white flex flex-col items-center justify-center p-4 font-sans text-center">
       <div className="w-full max-w-2xl">
         <header className="mb-8">
-            <div className="flex items-center justify-center gap-4 mb-6">
-                <FilmIcon className="w-12 h-12 sm:w-16 sm:h-16 text-cyan-500" />
+            <div className="flex flex-col items-center justify-center gap-4 mb-6">
+                <Logo className="w-32 h-auto" />
                 <h1 className="text-5xl sm:text-7xl font-bold tracking-tight bg-gradient-to-r from-cyan-500 to-blue-500 text-transparent bg-clip-text">
                     Video Hub
                 </h1>

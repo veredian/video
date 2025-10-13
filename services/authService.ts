@@ -17,6 +17,7 @@ export interface VideoData {
 
 const USERS_KEY = 'videoHubUsers';
 const CURRENT_USER_KEY = 'videoHubCurrentUser';
+const REMEMBERED_USER_KEY = 'videoHubRememberedUser';
 
 const getUsers = (): Record<string, User> => {
   try {
@@ -53,13 +54,18 @@ export const authService = {
     });
   },
 
-  login: (email: string, password: string): Promise<{ success: boolean; message: string; user?: User }> => {
+  login: (email: string, password: string, rememberMe: boolean): Promise<{ success: boolean; message: string; user?: User }> => {
     return new Promise((resolve) => {
       setTimeout(() => {
         const users = getUsers();
         const user = users[email];
         if (user && user.password === password) {
           localStorage.setItem(CURRENT_USER_KEY, email);
+          if (rememberMe) {
+            localStorage.setItem(REMEMBERED_USER_KEY, email);
+          } else {
+            localStorage.removeItem(REMEMBERED_USER_KEY);
+          }
           const { password, ...userWithoutPassword } = user;
           resolve({ success: true, message: 'Login successful!', user: userWithoutPassword });
         } else {
@@ -67,6 +73,10 @@ export const authService = {
         }
       }, 500);
     });
+  },
+
+  getRememberedUser: (): string | null => {
+    return localStorage.getItem(REMEMBERED_USER_KEY);
   },
 
   logout: () => {
