@@ -74,7 +74,10 @@ const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                         <strong>Easy Sharing Options:</strong> Instantly generate a shareable link or an HTML <code>&lt;iframe&gt;</code> embed code for any video. Note that these are temporary and session-based.
                     </li>
                      <li>
-                        <strong>Customizable User Settings:</strong> Personalize your experience by toggling Dark Mode, video looping, and Cinema Mode.
+                        <strong>Dynamic Video Watermark:</strong> A subtle, moving watermark with your username can be displayed on your videos for personalization. This can be toggled in the settings.
+                    </li>
+                     <li>
+                        <strong>Customizable User Settings:</strong> Personalize your experience by toggling Dark Mode, video looping, Cinema Mode, and the video watermark.
                     </li>
                 </ul>
             </Section>

@@ -119,6 +119,7 @@ const MainApp: React.FC<MainAppProps> = ({ user, onLogout, settings, onSettingsC
     onSettingsChange({ ...settings, theme: THEMES[nextIndex] });
   };
 
+  const watermarkText = "Eric and mackson";
 
   return (
     <div className="min-h-screen flex flex-col items-center p-4 sm:p-6 lg:p-8 font-sans">
@@ -168,7 +169,10 @@ const MainApp: React.FC<MainAppProps> = ({ user, onLogout, settings, onSettingsC
                       key={selectedVideo.id} // Ensure component remounts on video change
                       src={videoUrlForRender} 
                       loop={settings.loopVideo} 
-                      cinemaMode={settings.cinemaMode} 
+                      cinemaMode={settings.cinemaMode}
+                      showWatermark={settings.showWatermark}
+                      watermarkText={watermarkText}
+                      defaultPlaybackSpeed={settings.defaultPlaybackSpeed}
                     />
                   </div>
                   <div className="flex flex-col gap-4">

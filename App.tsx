@@ -8,6 +8,8 @@ export interface Settings {
   theme: 'light' | 'dark' | 'sunset' | 'ocean' | 'space';
   loopVideo: boolean;
   cinemaMode: boolean;
+  showWatermark: boolean;
+  defaultPlaybackSpeed: number;
 }
 
 const THEMES: Settings['theme'][] = ['light', 'dark', 'sunset', 'ocean', 'space'];
@@ -32,6 +34,8 @@ const App: React.FC = () => {
           theme: parsed.theme || 'light',
           loopVideo: parsed.loopVideo !== undefined ? parsed.loopVideo : true,
           cinemaMode: parsed.cinemaMode !== undefined ? parsed.cinemaMode : true,
+          showWatermark: parsed.showWatermark !== undefined ? parsed.showWatermark : true,
+          defaultPlaybackSpeed: parsed.defaultPlaybackSpeed || 1,
         };
       }
     } catch (error) {
@@ -41,6 +45,8 @@ const App: React.FC = () => {
       theme: window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light',
       loopVideo: true,
       cinemaMode: true,
+      showWatermark: true,
+      defaultPlaybackSpeed: 1,
     };
   });
 
