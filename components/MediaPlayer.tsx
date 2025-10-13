@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { PlayIcon } from './icons/PlayIcon';
 import { PauseIcon } from './icons/PauseIcon';
@@ -7,13 +8,13 @@ import { FullscreenIcon } from './icons/FullscreenIcon';
 import { FullscreenExitIcon } from './icons/FullscreenExitIcon';
 import { PictureInPictureIcon } from './icons/PictureInPictureIcon';
 import { SpinnerIcon } from './icons/SpinnerIcon';
+import { BanIcon } from './icons/BanIcon';
 import { MediaType } from '../services/authService';
 
 interface MediaPlayerProps {
   src: string;
   mediaType: MediaType;
   fileName: string;
-  // FIX: Added mimeType prop to correctly set the type on the <source> element.
   mimeType: string;
   loop: boolean;
   cinemaMode: boolean;
@@ -48,12 +49,18 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
   const [isPipActive, setIsPipActive] = useState(false);
   const [isWaiting, setIsWaiting] = useState(true);
   const [showSpeedMenu, setShowSpeedMenu] = useState(false);
+  const [loadError, setLoadError] = useState(false);
 
-  const mediaRef = useRef<HTMLVideoElement & HTMLAudioElement>(null);
+  const mediaRef = useRef<HTMLVideoElement & HTMLAudioElement & HTMLImageElement>(null);
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const controlsTimeoutRef = useRef<number | null>(null);
   const seekInputRef = useRef<HTMLInputElement>(null);
+  
+  const handleMediaError = useCallback(() => {
+    setIsWaiting(false);
+    setLoadError(true);
+  }, []);
 
   const handlePlayPause = useCallback(() => {
     if (mediaRef.current) {
@@ -90,7 +97,7 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
 
   useEffect(() => {
     const mediaElement = mediaRef.current;
-    if (!mediaElement) return;
+    if (!mediaElement || mediaType === 'image') return;
 
     const onPlay = () => setIsPlaying(true);
     const onPause = () => setIsPlaying(false);
@@ -133,6 +140,7 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
     mediaElement.playbackRate = playbackRate;
     mediaElement.currentTime = 0;
     setIsWaiting(true);
+    setLoadError(false);
 
     return () => {
       mediaElement.removeEventListener('play', onPlay);
@@ -156,13 +164,13 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
         const target = e.target as HTMLElement;
         if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
         switch (e.code) {
-            case 'Space': e.preventDefault(); handlePlayPause(); break;
-            case 'KeyM': toggleMute(); break;
+            case 'Space': if (mediaType !== 'image') { e.preventDefault(); handlePlayPause(); } break;
+            case 'KeyM': if (mediaType !== 'image') toggleMute(); break;
             case 'KeyF': if (mediaType === 'video') toggleFullscreen(); break;
-            case 'ArrowLeft': seek(-5); break;
-            case 'ArrowRight': seek(5); break;
-            case 'ArrowUp': e.preventDefault(); setVolume(v => Math.min(v + 0.1, 1)); break;
-            case 'ArrowDown': e.preventDefault(); setVolume(v => Math.max(v - 0.1, 0)); break;
+            case 'ArrowLeft': if (mediaType !== 'image') seek(-5); break;
+            case 'ArrowRight': if (mediaType !== 'image') seek(5); break;
+            case 'ArrowUp': if (mediaType !== 'image') { e.preventDefault(); setVolume(v => Math.min(v + 0.1, 1)); } break;
+            case 'ArrowDown': if (mediaType !== 'image') { e.preventDefault(); setVolume(v => Math.max(v - 0.1, 0)); } break;
         }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -171,11 +179,11 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
 
   useEffect(() => {
     const media = mediaRef.current;
-    if (media) {
+    if (media && mediaType !== 'image') {
         media.volume = volume;
         media.muted = isMuted;
     }
-  }, [volume, isMuted]);
+  }, [volume, isMuted, mediaType]);
 
   useEffect(() => {
     const handleFullscreenChange = () => setIsFullscreen(!!document.fullscreenElement);
@@ -211,7 +219,6 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
   const togglePiP = () => {
     const videoElement = mediaRef.current as HTMLVideoElement;
     if (!videoElement) return;
-    // FIX: Corrected typo from `exitPictureinPicture` to `exitPictureInPicture`.
     if(document.pictureInPictureElement) document.exitPictureInPicture();
     else videoElement.requestPictureInPicture();
   };
@@ -250,8 +257,7 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
     switch (mediaType) {
       case 'video':
         return (
-          // FIX: Used the `mimeType` prop instead of trying to access a non-existent `type` property on the mediaRef.
-          <video ref={mediaRef} loop={loop} muted={isMuted} playsInline preload="metadata" className="relative z-10 w-full h-full object-contain" crossOrigin="anonymous" onClick={(e) => e.stopPropagation()}>
+          <video ref={mediaRef} loop={loop} muted={isMuted} playsInline preload="metadata" className="relative z-10 w-full h-full object-contain" crossOrigin="anonymous" onClick={(e) => e.stopPropagation()} onError={handleMediaError}>
             <source src={`${src}#t=0.1`} type={mimeType} />
             Your browser does not support the video tag.
           </video>
@@ -260,8 +266,7 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
         return (
             <div className="w-full h-full flex flex-col items-center justify-center bg-gray-900/10 dark:bg-black/20" onClick={(e) => e.stopPropagation()}>
                  <p className="text-xl font-semibold text-gray-800 dark:text-white truncate max-w-full px-4">{fileName}</p>
-                 {/* FIX: Used the `mimeType` prop instead of trying to access a non-existent `type` property on the mediaRef. */}
-                 <audio ref={mediaRef} loop={loop} muted={isMuted} playsInline preload="metadata" className="hidden">
+                 <audio ref={mediaRef} loop={loop} muted={isMuted} playsInline preload="metadata" className="hidden" onError={handleMediaError}>
                     <source src={src} type={mimeType} />
                  </audio>
             </div>
@@ -269,7 +274,7 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
       case 'image':
         return (
             <div className="w-full h-full flex items-center justify-center p-4" onClick={(e) => e.stopPropagation()}>
-                <img src={src} alt={fileName} className="max-w-full max-h-full object-contain rounded-md shadow-lg" />
+                <img ref={mediaRef} src={src} alt={fileName} className="max-w-full max-h-full object-contain rounded-md shadow-lg" onError={handleMediaError} />
             </div>
         );
       default:
@@ -278,20 +283,27 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
   };
 
   return (
-    <div ref={playerContainerRef} className={`relative w-full aspect-video bg-black rounded-lg overflow-hidden shadow-lg group ${mediaType !== 'image' ? '' : 'bg-gray-100 dark:bg-gray-900'}`} onMouseMove={showControls} onMouseLeave={hideControls} onClick={handlePlayPause}>
+    <div ref={playerContainerRef} className={`relative w-full aspect-video bg-black rounded-lg overflow-hidden shadow-lg group ${mediaType !== 'image' ? '' : 'bg-gray-100 dark:bg-gray-900'}`} onMouseMove={showControls} onMouseLeave={hideControls} onClick={mediaType !== 'image' ? handlePlayPause : undefined}>
        {mediaType === 'video' && <canvas ref={canvasRef} className={`absolute inset-0 w-full h-full transition-opacity duration-500 ${cinemaMode && isPlaying ? 'opacity-60' : 'opacity-0'}`} style={{ filter: 'blur(30px)', transform: 'scale(1.2)' }} />}
        
        <div className="relative w-full h-full">
          {renderPlayer()}
         
-        {isWaiting && mediaType !== 'image' && (
+        {loadError && (
+          <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/60 text-white p-4 text-center">
+            <BanIcon className="w-12 h-12 text-red-400 mb-2" />
+            <p className="font-semibold">Could not load media.</p>
+            <p className="text-sm text-gray-300">The file may be corrupted or missing.</p>
+          </div>
+        )}
+        
+        {isWaiting && !loadError && mediaType !== 'image' && (
             <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/30">
                 <SpinnerIcon className="w-12 h-12 text-white/80 animate-spin" />
             </div>
         )}
 
-        {/* Custom Controls for Audio/Video */}
-        {mediaType !== 'image' && (
+        {mediaType !== 'image' && !loadError && (
             <div className={`absolute bottom-0 left-0 right-0 z-30 p-3 bg-gradient-to-t from-black/70 to-transparent transition-opacity duration-300 ${isControlsVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} onClick={(e) => e.stopPropagation()}>
                <div className="flex items-center gap-2">
                 <input ref={seekInputRef} type="range" min="0" max={duration} value={currentTime} onChange={handleSeek} className="video-range w-full" style={{'--progress': `${(currentTime / duration) * 100}%`} as React.CSSProperties} />
