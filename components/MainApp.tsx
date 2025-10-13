@@ -211,7 +211,7 @@ const MainApp: React.FC<MainAppProps> = ({ user, onLogout, settings, onSettingsC
         </main>
         
         <footer className="text-center mt-8 text-gray-500 dark:text-gray-400 text-sm">
-          <p>&copy; {new Date().getFullYear()} NV & NE ltd. All rights reserved.</p>
+          <p>Made by Mackson</p>
         </footer>
       </div>
 
