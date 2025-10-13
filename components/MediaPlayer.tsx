@@ -13,6 +13,8 @@ interface MediaPlayerProps {
   src: string;
   mediaType: MediaType;
   fileName: string;
+  // FIX: Added mimeType prop to correctly set the type on the <source> element.
+  mimeType: string;
   loop: boolean;
   cinemaMode: boolean;
   showWatermark: boolean;
@@ -33,7 +35,7 @@ const formatTime = (timeInSeconds: number) => {
 const PLAYBACK_RATES = [0.5, 0.75, 1, 1.25, 1.5, 2];
 
 const MediaPlayer: React.FC<MediaPlayerProps> = ({ 
-    src, mediaType, fileName, loop, cinemaMode, showWatermark, watermarkText, defaultPlaybackSpeed 
+    src, mediaType, fileName, loop, cinemaMode, showWatermark, watermarkText, defaultPlaybackSpeed, mimeType
 }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
@@ -209,7 +211,8 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
   const togglePiP = () => {
     const videoElement = mediaRef.current as HTMLVideoElement;
     if (!videoElement) return;
-    if(document.pictureInPictureElement) document.exitPictureinPicture();
+    // FIX: Corrected typo from `exitPictureinPicture` to `exitPictureInPicture`.
+    if(document.pictureInPictureElement) document.exitPictureInPicture();
     else videoElement.requestPictureInPicture();
   };
 
@@ -247,8 +250,9 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
     switch (mediaType) {
       case 'video':
         return (
+          // FIX: Used the `mimeType` prop instead of trying to access a non-existent `type` property on the mediaRef.
           <video ref={mediaRef} loop={loop} muted={isMuted} playsInline preload="metadata" className="relative z-10 w-full h-full object-contain" crossOrigin="anonymous" onClick={(e) => e.stopPropagation()}>
-            <source src={`${src}#t=0.1`} type={mediaRef.current?.type} />
+            <source src={`${src}#t=0.1`} type={mimeType} />
             Your browser does not support the video tag.
           </video>
         );
@@ -256,8 +260,9 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
         return (
             <div className="w-full h-full flex flex-col items-center justify-center bg-gray-900/10 dark:bg-black/20" onClick={(e) => e.stopPropagation()}>
                  <p className="text-xl font-semibold text-gray-800 dark:text-white truncate max-w-full px-4">{fileName}</p>
+                 {/* FIX: Used the `mimeType` prop instead of trying to access a non-existent `type` property on the mediaRef. */}
                  <audio ref={mediaRef} loop={loop} muted={isMuted} playsInline preload="metadata" className="hidden">
-                    <source src={src} type={mediaRef.current?.type} />
+                    <source src={src} type={mimeType} />
                  </audio>
             </div>
         );

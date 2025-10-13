@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { VideoData } from '../services/authService';
+// FIX: The type `VideoData` does not exist. It has been replaced by the more generic `MediaData`.
+import { MediaData } from '../services/authService';
 import { FilmIcon } from './icons/FilmIcon';
 import { PlusIcon } from './icons/PlusIcon';
 import { TrashIcon } from './icons/TrashIcon';
@@ -8,8 +9,10 @@ import { SortAscIcon } from './icons/SortAscIcon';
 import { SortDescIcon } from './icons/SortDescIcon';
 
 interface VideoGalleryProps {
-  videos: VideoData[];
-  onSelectVideo: (video: VideoData) => void;
+  // FIX: Using `MediaData` type to match what's available from `authService`.
+  videos: MediaData[];
+  // FIX: Using `MediaData` type to match what's available from `authService`.
+  onSelectVideo: (video: MediaData) => void;
   onUploadClick: () => void;
   onDeleteVideo: (videoId: string) => void;
 }

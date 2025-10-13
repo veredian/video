@@ -172,6 +172,8 @@ const MainApp: React.FC<MainAppProps> = ({ user, onLogout, settings, onSettingsC
                       src={mediaUrlForRender} 
                       mediaType={selectedMedia.mediaType}
                       fileName={selectedMedia.name}
+                      // FIX: Pass the mimeType to the MediaPlayer component to resolve type errors.
+                      mimeType={selectedMedia.type}
                       loop={settings.loopVideo} 
                       cinemaMode={settings.cinemaMode}
                       showWatermark={settings.showWatermark}
