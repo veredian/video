@@ -3,20 +3,33 @@ import { LinkIcon } from './icons/LinkIcon';
 import { CodeIcon } from './icons/CodeIcon';
 import { CopyIcon } from './icons/CopyIcon';
 import { CheckIcon } from './icons/CheckIcon';
+import { MediaType } from '../services/authService';
 
 interface ShareOptionsProps {
-  videoUrl: string;
+  mediaUrl: string;
   fileName: string;
+  mediaType: MediaType;
 }
 
 type Tab = 'link' | 'embed';
 
-const ShareOptions: React.FC<ShareOptionsProps> = ({ videoUrl, fileName }) => {
+const ShareOptions: React.FC<ShareOptionsProps> = ({ mediaUrl, fileName, mediaType }) => {
   const [activeTab, setActiveTab] = useState<Tab>('link');
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedEmbed, setCopiedEmbed] = useState(false);
 
-  const embedCode = `<iframe src="${videoUrl}" width="100%" height="100%" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen title="${fileName}"></iframe>`;
+  const getEmbedCode = () => {
+    switch (mediaType) {
+      case 'audio':
+        return `<audio controls src="${mediaUrl}" title="${fileName}"></audio>`;
+      case 'image':
+        return `<img src="${mediaUrl}" alt="${fileName}" style="max-width: 100%; height: auto;" />`;
+      case 'video':
+      default:
+        return `<iframe src="${mediaUrl}" width="100%" height="100%" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen title="${fileName}"></iframe>`;
+    }
+  };
+  const embedCode = getEmbedCode();
 
   const handleCopy = useCallback((text: string, type: Tab) => {
     navigator.clipboard.writeText(text).then(() => {
@@ -59,7 +72,7 @@ const ShareOptions: React.FC<ShareOptionsProps> = ({ videoUrl, fileName }) => {
 
   return (
     <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-lg border border-gray-300 dark:border-gray-700 h-full flex flex-col">
-      <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Share Video</h3>
+      <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Share Media</h3>
       <div className="flex gap-2 p-1 bg-gray-100 dark:bg-gray-900/50 rounded-lg">
         <TabButton tabName="link" label="Share Link" icon={<LinkIcon className="w-5 h-5" />} />
         <TabButton tabName="embed" label="Embed Code" icon={<CodeIcon className="w-5 h-5" />} />
@@ -67,17 +80,17 @@ const ShareOptions: React.FC<ShareOptionsProps> = ({ videoUrl, fileName }) => {
       <div className="mt-4 flex-grow flex flex-col">
         {activeTab === 'link' ? (
           <div>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Anyone with this link can view the video in this browser session.</p>
-            <CodeBox content={videoUrl} copied={copiedLink} onCopy={() => handleCopy(videoUrl, 'link')} />
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Anyone with this link can view the media in this browser session.</p>
+            <CodeBox content={mediaUrl} copied={copiedLink} onCopy={() => handleCopy(mediaUrl, 'link')} />
           </div>
         ) : (
           <div>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Copy and paste this code to embed the video on your website.</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Copy and paste this code to embed the media on your website.</p>
             <CodeBox content={embedCode} copied={copiedEmbed} onCopy={() => handleCopy(embedCode, 'embed')} />
           </div>
         )}
         <div className="mt-auto pt-4 text-center text-xs text-gray-500 dark:text-gray-400">
-            Note: This link is temporary and only works on this device during your current session. For permanent hosting, upload the video to a dedicated service.
+            Note: This link is temporary and only works on this device during your current session. For permanent hosting, upload the media to a dedicated service.
         </div>
       </div>
     </div>

@@ -3,11 +3,12 @@ import { GoogleGenAI } from '@google/genai';
 import { SparklesIcon } from './icons/SparklesIcon';
 import { SpinnerIcon } from './icons/SpinnerIcon';
 import { PaperAirplaneIcon } from './icons/PaperAirplaneIcon';
-import { VideoData } from '../services/authService';
-import { videoDBService } from '../services/videoDBService';
+import { MediaData } from '../services/authService';
+import { mediaDBService } from '../services/mediaDBService';
+import { BanIcon } from './icons/BanIcon';
 
 interface AskAiPanelProps {
-  video: VideoData;
+  media: MediaData;
 }
 
 const blobToBase64 = (blob: Blob): Promise<string> => {
@@ -23,7 +24,7 @@ const blobToBase64 = (blob: Blob): Promise<string> => {
   });
 };
 
-const AskAiPanel: React.FC<AskAiPanelProps> = ({ video }) => {
+const AskAiPanel: React.FC<AskAiPanelProps> = ({ media }) => {
   const [question, setQuestion] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [response, setResponse] = useState('');
@@ -39,38 +40,37 @@ const AskAiPanel: React.FC<AskAiPanelProps> = ({ video }) => {
         throw new Error("API key is not configured.");
       }
 
-      const videoBlob = await videoDBService.getVideo(video.id);
-      if (!videoBlob) {
-        throw new Error("Could not retrieve video data from the database.");
+      const mediaBlob = await mediaDBService.getMedia(media.id);
+      if (!mediaBlob) {
+        throw new Error("Could not retrieve media data from the database.");
       }
 
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-      const base64Data = await blobToBase64(videoBlob);
-      const videoPart = {
+      const base64Data = await blobToBase64(mediaBlob);
+      const mediaPart = {
         inlineData: {
-            mimeType: video.type,
+            mimeType: media.type,
             data: base64Data,
         },
       };
 
-      let prompt = `Analyze the content of the provided video titled "${video.name}". 
-
-Please provide the following:
-1. A brief summary of the video.
-2. A list of key talking points or main events in bullet points.`;
+      let prompt = '';
+      if (media.mediaType === 'video') {
+        prompt = `Analyze the content of the provided video titled "${media.name}". Please provide a brief summary and a list of key talking points or main events in bullet points.`;
+      } else if (media.mediaType === 'image') {
+        prompt = `Analyze the provided image titled "${media.name}". Describe the key objects, colors, composition, and overall mood of the image.`;
+      }
 
       if (question.trim()) {
-        prompt += `\n\nFinally, based on the video's content, answer the user's specific question: "${question}"`;
-      } else {
-        prompt += `\n\nIf there are no clear talking points (e.g., it's a music video or abstract), describe the visual themes and overall mood.`
+        prompt += `\n\nFinally, based on the content, answer the user's specific question: "${question}"`;
       }
 
       const textPart = { text: prompt };
       
       const result = await ai.models.generateContent({
           model: 'gemini-2.5-flash',
-          contents: { parts: [textPart, videoPart] },
+          contents: { parts: [textPart, mediaPart] },
       });
 
       setResponse(result.text);
@@ -84,11 +84,23 @@ Please provide the following:
     }
   };
 
+  if (media.mediaType === 'audio') {
+    return (
+        <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-lg border border-gray-300 dark:border-gray-700 h-full flex flex-col items-center justify-center text-center">
+            <BanIcon className="w-12 h-12 text-gray-400 dark:text-gray-500 mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">AI Analysis Not Available</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                Sorry, AI analysis for audio files is not yet supported.
+            </p>
+        </div>
+    );
+  }
+
   return (
     <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-lg border border-gray-300 dark:border-gray-700 h-full flex flex-col">
       <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white flex items-center gap-2">
         <SparklesIcon className="w-5 h-5 text-cyan-400" />
-        Ask About Video
+        Ask About Media
       </h3>
       <div className="relative flex-grow flex flex-col">
         <textarea
@@ -110,7 +122,7 @@ Please provide the following:
             </>
           ) : (
              <>
-                {question.trim() ? 'Ask AI' : 'Analyze Video'}
+                {question.trim() ? 'Ask AI' : 'Analyze Media'}
                 <PaperAirplaneIcon className="w-5 h-5" />
              </>
           )}

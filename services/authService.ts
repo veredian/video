@@ -1,18 +1,21 @@
 // A mock auth service to simulate a backend using localStorage.
 // In a real app, this would make API calls to a secure server.
 // WARNING: Passwords are stored in plaintext. This is NOT secure and is for demonstration purposes only.
-import { videoDBService } from './videoDBService';
+import { mediaDBService } from './mediaDBService';
 
 export interface User {
   email: string;
   password?: string; // Optional because we don't return it on getCurrentUser
-  videos: VideoData[];
+  media: MediaData[];
 }
 
-export interface VideoData {
+export type MediaType = 'video' | 'audio' | 'image';
+
+export interface MediaData {
   id: string;
   name: string;
-  type: string;
+  type: string; // The full MIME type
+  mediaType: MediaType;
 }
 
 const USERS_KEY = 'NVNELtdUsers';
@@ -32,7 +35,7 @@ const saveUsers = (users: Record<string, User>) => {
   try {
     localStorage.setItem(USERS_KEY, JSON.stringify(users));
   } catch (error) {
-    console.error("Failed to save users to localStorage. This might be due to storage limits if video data is being saved here.", error);
+    console.error("Failed to save users to localStorage. This might be due to storage limits if media data is being saved here.", error);
     // In a real app, you would have better error handling here.
     alert("Error: Could not save user data. The browser's local storage might be full.");
   }
@@ -47,7 +50,7 @@ export const authService = {
           resolve({ success: false, message: 'User with this email already exists.' });
           return;
         }
-        users[email] = { email, password, videos: [] };
+        users[email] = { email, password, media: [] };
         saveUsers(users);
         resolve({ success: true, message: 'Signup successful. Please log in.' });
       }, 500);
@@ -107,7 +110,7 @@ export const authService = {
     return null;
   },
   
-  addVideoForCurrentUser: (videoFile: File): Promise<User> => {
+  addMediaForCurrentUser: (mediaFile: File): Promise<User> => {
     return new Promise(async (resolve, reject) => {
       const userEmail = localStorage.getItem(CURRENT_USER_KEY);
       if (!userEmail) return reject(new Error("No user logged in"));
@@ -115,20 +118,33 @@ export const authService = {
       const users = getUsers();
       const user = users[userEmail];
       if (user) {
-         const videoData: VideoData = {
+         let mediaType: MediaType;
+         if (mediaFile.type.startsWith('video/')) {
+            mediaType = 'video';
+         } else if (mediaFile.type.startsWith('audio/')) {
+            mediaType = 'audio';
+         } else if (mediaFile.type.startsWith('image/')) {
+            mediaType = 'image';
+         } else {
+            return reject(new Error('Unsupported file type'));
+         }
+        
+         const mediaData: MediaData = {
           id: Date.now().toString(),
-          name: videoFile.name,
-          type: videoFile.type,
+          name: mediaFile.name,
+          type: mediaFile.type,
+          mediaType: mediaType,
         };
+
         try {
-          await videoDBService.saveVideo(videoData.id, videoFile);
-          user.videos.push(videoData);
+          await mediaDBService.saveMedia(mediaData.id, mediaFile);
+          user.media.push(mediaData);
           saveUsers(users);
           const { password, ...userWithoutPassword } = user;
           resolve(userWithoutPassword);
         } catch (error) {
-           console.error("Failed to save video:", error);
-           reject(new Error("Could not save video file."));
+           console.error("Failed to save media:", error);
+           reject(new Error("Could not save media file."));
         }
       } else {
         reject(new Error("Current user not found"));
@@ -136,7 +152,7 @@ export const authService = {
     });
   },
 
-  deleteVideoForCurrentUser: (videoId: string): Promise<User> => {
+  deleteMediaForCurrentUser: (mediaId: string): Promise<User> => {
     return new Promise(async (resolve, reject) => {
         const userEmail = localStorage.getItem(CURRENT_USER_KEY);
         if (!userEmail) return reject(new Error("No user logged in"));
@@ -144,24 +160,24 @@ export const authService = {
         const users = getUsers();
         const user = users[userEmail];
         if (user) {
-            const videoIndex = user.videos.findIndex(v => v.id === videoId);
-            if (videoIndex === -1) {
-                return reject(new Error("Video not found for this user."));
+            const mediaIndex = user.media.findIndex(v => v.id === mediaId);
+            if (mediaIndex === -1) {
+                return reject(new Error("Media not found for this user."));
             }
             
             try {
                 // First remove from DB
-                await videoDBService.deleteVideo(videoId);
+                await mediaDBService.deleteMedia(mediaId);
                 
-                // Then remove from user's video list in localStorage
-                user.videos.splice(videoIndex, 1);
+                // Then remove from user's media list in localStorage
+                user.media.splice(mediaIndex, 1);
                 saveUsers(users);
                 
                 const { password, ...userWithoutPassword } = user;
                 resolve(userWithoutPassword);
             } catch (error) {
-                console.error("Failed to delete video:", error);
-                reject(new Error("Could not delete video file."));
+                console.error("Failed to delete media:", error);
+                reject(new Error("Could not delete media file."));
             }
         } else {
             reject(new Error("Current user not found"));

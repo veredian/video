@@ -1,9 +1,9 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import VideoUploader from './VideoUploader';
-import VideoPlayer from './VideoPlayer';
+import MediaUploader from './MediaUploader';
+import MediaPlayer from './MediaPlayer';
 import ShareOptions from './ShareOptions';
 import SettingsModal from './SettingsModal';
-import VideoGallery from './VideoGallery';
+import MediaGallery from './MediaGallery';
 import AskAiPanel from './AskAiPanel';
 import HelpModal from './HelpModal';
 import { Logo } from './icons/Logo';
@@ -13,8 +13,8 @@ import { TrashIcon } from './icons/TrashIcon';
 import { DownloadIcon } from './icons/DownloadIcon';
 import { QuestionMarkIcon } from './icons/QuestionMarkIcon';
 import { PaintBrushIcon } from './icons/PaintBrushIcon';
-import { User, authService, VideoData } from '../services/authService';
-import { videoDBService } from '../services/videoDBService';
+import { User, authService, MediaData } from '../services/authService';
+import { mediaDBService } from '../services/mediaDBService';
 import { Settings } from '../App';
 
 interface MainAppProps {
@@ -27,47 +27,47 @@ interface MainAppProps {
 const THEMES: Settings['theme'][] = ['light', 'dark', 'sunset', 'ocean', 'space'];
 
 const MainApp: React.FC<MainAppProps> = ({ user, onLogout, settings, onSettingsChange }) => {
-  const [videos, setVideos] = useState<VideoData[]>(user.videos);
-  const [selectedVideo, setSelectedVideo] = useState<VideoData | null>(null);
+  const [media, setMedia] = useState<MediaData[]>(user.media);
+  const [selectedMedia, setSelectedMedia] = useState<MediaData | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
 
-  const handleVideoUpload = useCallback(async (videoFile: File) => {
-    const updatedUser = await authService.addVideoForCurrentUser(videoFile);
-    const newVideo = updatedUser.videos[updatedUser.videos.length - 1];
-    setVideos(updatedUser.videos);
-    setSelectedVideo(newVideo);
+  const handleMediaUpload = useCallback(async (mediaFile: File) => {
+    const updatedUser = await authService.addMediaForCurrentUser(mediaFile);
+    const newMedia = updatedUser.media[updatedUser.media.length - 1];
+    setMedia(updatedUser.media);
+    setSelectedMedia(newMedia);
     setIsUploading(false);
   }, []);
 
-  const handleSelectVideo = useCallback((video: VideoData) => {
-    setSelectedVideo(video);
+  const handleSelectMedia = useCallback((mediaItem: MediaData) => {
+    setSelectedMedia(mediaItem);
   }, []);
 
   const handleBackToGallery = useCallback(() => {
-    setSelectedVideo(null);
+    setSelectedMedia(null);
   }, []);
 
-  const handleDeleteVideo = useCallback(async (videoId: string) => {
+  const handleDeleteMedia = useCallback(async (mediaId: string) => {
     try {
-        const updatedUser = await authService.deleteVideoForCurrentUser(videoId);
-        setVideos(updatedUser.videos);
-        // If the deleted video was the one being viewed, go back to the gallery
-        if(selectedVideo?.id === videoId) {
-            setSelectedVideo(null);
+        const updatedUser = await authService.deleteMediaForCurrentUser(mediaId);
+        setMedia(updatedUser.media);
+        // If the deleted media was the one being viewed, go back to the gallery
+        if(selectedMedia?.id === mediaId) {
+            setSelectedMedia(null);
         }
     } catch (error) {
-        console.error("Failed to delete video:", error);
-        alert("There was an error deleting the video. Please try again.");
+        console.error("Failed to delete media:", error);
+        alert("There was an error deleting the media. Please try again.");
     }
-  }, [selectedVideo]);
+  }, [selectedMedia]);
   
-  const [videoUrlForRender, setVideoUrlForRender] = useState<string | null>(null);
+  const [mediaUrlForRender, setMediaUrlForRender] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!selectedVideo) {
-      setVideoUrlForRender(null);
+    if (!selectedMedia) {
+      setMediaUrlForRender(null);
       return;
     }
 
@@ -76,18 +76,20 @@ const MainApp: React.FC<MainAppProps> = ({ user, onLogout, settings, onSettingsC
 
     const createUrl = async () => {
       try {
-        const blob = await videoDBService.getVideo(selectedVideo.id);
+        const blob = await mediaDBService.getMedia(selectedMedia.id);
         if (isMounted && blob) {
             objectUrl = URL.createObjectURL(blob);
-            setVideoUrlForRender(objectUrl);
+            setMediaUrlForRender(objectUrl);
         } else if (isMounted) {
-            console.error(`Video with id ${selectedVideo.id} not found in DB.`);
-            setVideoUrlForRender(null);
+            console.error(`Media with id ${selectedMedia.id} not found in DB.`);
+            setMediaUrlForRender(null);
+            alert("Error: Could not load media file. It may have been deleted.");
+            setSelectedMedia(null);
         }
       } catch (error) {
-        console.error("Error creating object URL for video", error);
+        console.error("Error creating object URL for media", error);
         if (isMounted) {
-            setVideoUrlForRender(null);
+            setMediaUrlForRender(null);
         }
       }
     };
@@ -100,18 +102,18 @@ const MainApp: React.FC<MainAppProps> = ({ user, onLogout, settings, onSettingsC
         URL.revokeObjectURL(objectUrl);
       }
     };
-  }, [selectedVideo]);
+  }, [selectedMedia]);
 
-  const handleDownloadVideo = useCallback(() => {
-    if (!videoUrlForRender || !selectedVideo) return;
+  const handleDownloadMedia = useCallback(() => {
+    if (!mediaUrlForRender || !selectedMedia) return;
 
     const link = document.createElement('a');
-    link.href = videoUrlForRender;
-    link.download = selectedVideo.name;
+    link.href = mediaUrlForRender;
+    link.download = selectedMedia.name;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-  }, [videoUrlForRender, selectedVideo]);
+  }, [mediaUrlForRender, selectedMedia]);
 
   const handleCycleTheme = () => {
     const currentIndex = THEMES.indexOf(settings.theme);
@@ -119,7 +121,7 @@ const MainApp: React.FC<MainAppProps> = ({ user, onLogout, settings, onSettingsC
     onSettingsChange({ ...settings, theme: THEMES[nextIndex] });
   };
 
-  const watermarkText = "Eric and mackson";
+  const watermarkText = user.email;
 
   return (
     <div className="min-h-screen flex flex-col items-center p-4 sm:p-6 lg:p-8 font-sans">
@@ -161,13 +163,15 @@ const MainApp: React.FC<MainAppProps> = ({ user, onLogout, settings, onSettingsC
         </header>
 
         <main className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm rounded-2xl shadow-2xl shadow-cyan-500/10 p-6 sm:p-8 border border-gray-300 dark:border-gray-700">
-          {selectedVideo && videoUrlForRender ? (
+          {selectedMedia && mediaUrlForRender ? (
              <div>
                 <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
                   <div className="xl:col-span-2 w-full">
-                    <VideoPlayer 
-                      key={selectedVideo.id} // Ensure component remounts on video change
-                      src={videoUrlForRender} 
+                    <MediaPlayer 
+                      key={selectedMedia.id} // Ensure component remounts on media change
+                      src={mediaUrlForRender} 
+                      mediaType={selectedMedia.mediaType}
+                      fileName={selectedMedia.name}
                       loop={settings.loopVideo} 
                       cinemaMode={settings.cinemaMode}
                       showWatermark={settings.showWatermark}
@@ -176,8 +180,8 @@ const MainApp: React.FC<MainAppProps> = ({ user, onLogout, settings, onSettingsC
                     />
                   </div>
                   <div className="flex flex-col gap-4">
-                    <ShareOptions videoUrl={videoUrlForRender} fileName={selectedVideo.name} />
-                    <AskAiPanel video={selectedVideo} />
+                    <ShareOptions mediaUrl={mediaUrlForRender} fileName={selectedMedia.name} mediaType={selectedMedia.mediaType} />
+                    <AskAiPanel media={selectedMedia} />
                   </div>
                 </div>
                 <div className="flex flex-wrap justify-center items-center gap-4 mt-8">
@@ -188,7 +192,7 @@ const MainApp: React.FC<MainAppProps> = ({ user, onLogout, settings, onSettingsC
                     Back to Gallery
                   </button>
                   <button
-                    onClick={handleDownloadVideo}
+                    onClick={handleDownloadMedia}
                     className="flex items-center gap-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300 shadow-lg shadow-gray-500/20"
                   >
                     <DownloadIcon className="w-5 h-5" />
@@ -196,8 +200,8 @@ const MainApp: React.FC<MainAppProps> = ({ user, onLogout, settings, onSettingsC
                   </button>
                    <button
                     onClick={() => {
-                        if (window.confirm('Are you sure you want to delete this video? This action cannot be undone.')) {
-                            handleDeleteVideo(selectedVideo.id);
+                        if (window.confirm('Are you sure you want to delete this media? This action cannot be undone.')) {
+                            handleDeleteMedia(selectedMedia.id);
                         }
                     }}
                     className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300 shadow-lg shadow-red-500/20"
@@ -207,10 +211,10 @@ const MainApp: React.FC<MainAppProps> = ({ user, onLogout, settings, onSettingsC
                   </button>
                 </div>
              </div>
-          ) : videos.length > 0 && !isUploading ? (
-             <VideoGallery videos={videos} onSelectVideo={handleSelectVideo} onUploadClick={() => setIsUploading(true)} onDeleteVideo={handleDeleteVideo} />
+          ) : media.length > 0 && !isUploading ? (
+             <MediaGallery media={media} onSelectMedia={handleSelectMedia} onUploadClick={() => setIsUploading(true)} onDeleteMedia={handleDeleteMedia} />
           ) : (
-            <VideoUploader onVideoUpload={handleVideoUpload} />
+            <MediaUploader onMediaUpload={handleMediaUpload} />
           )}
         </main>
         
