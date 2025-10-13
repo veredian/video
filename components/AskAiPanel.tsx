@@ -110,7 +110,7 @@ Please provide the following:
             </>
           ) : (
              <>
-                {question.trim() ? 'Ask Gemini' : 'Analyze Video'}
+                {question.trim() ? 'Ask AI' : 'Analyze Video'}
                 <PaperAirplaneIcon className="w-5 h-5" />
              </>
           )}

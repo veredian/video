@@ -52,7 +52,7 @@ const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
         <div className="overflow-y-auto max-h-[70vh] pr-4 -mr-4">
             <Section title="High-Level Summary">
                 <p>
-                    This application is a sophisticated, modern web application that functions as a secure, personal video management system running entirely in your browser. It's a "Personal Video Hub" where users can sign up, log in, manage a private library of their videos, and use Google Gemini AI to analyze and answer questions about video content.
+                    This application is a sophisticated, modern web application that functions as a secure, personal video management system running entirely in your browser. It's a <span className="font-bold bg-gradient-to-r from-cyan-500 to-blue-500 text-transparent bg-clip-text">mackson development Software</span> where users can sign up, log in, manage a private library of their videos, and use a powerful AI to analyze and answer questions about video content.
                 </p>
             </Section>
 
@@ -68,7 +68,7 @@ const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                         <strong>Advanced Video Player:</strong> Features a custom player and a standout <strong>Cinema Mode</strong> that creates an immersive, blurred background glow from the video's colors.
                     </li>
                     <li>
-                        <strong>AI-Powered Video Analysis (Gemini Integration):</strong> The app's most powerful feature. You can ask the AI for a summary of the video or ask specific questions about its content. The app securely sends video data to the <code>gemini-2.5-flash</code> model for analysis.
+                        <strong>AI-Powered Video Analysis:</strong> The app's most powerful feature. You can ask the AI for a summary of the video or ask specific questions about its content. The app securely sends video data to an advanced AI model for analysis.
                     </li>
                     <li>
                         <strong>Easy Sharing Options:</strong> Instantly generate a shareable link or an HTML <code>&lt;iframe&gt;</code> embed code for any video. Note that these are temporary and session-based.
@@ -83,18 +83,33 @@ const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                 <ul className="list-disc list-inside space-y-2">
                     <li><strong>Frontend Framework:</strong> React with TypeScript</li>
                     <li><strong>Styling:</strong> Tailwind CSS</li>
-                    <li><strong>AI Integration:</strong> Google Gemini API (@google/genai)</li>
+                    <li><strong>AI Integration:</strong> AI-Powered Analysis</li>
                     <li><strong>Local Storage:</strong> IndexedDB (for video files) and LocalStorage (for user data/settings)</li>
                 </ul>
             </Section>
 
-            <Section title="Need Help?">
+            <Section title="Created By">
                 <p>
-                    If you encounter any issues, please try the following:
+                    This application was personally created by Byiringiro Mackson.
+                </p>
+            </Section>
+
+            <Section title="Support & Control">
+                <p>
+                    This application and all its features are controlled and managed by Byiringiro Mackson.
+                </p>
+                <p className="mt-2">
+                    For any support inquiries, issues, or questions, please contact us at our controlling email address: <a href="mailto:byiringiromackson2@gmail.com" className="text-cyan-500 hover:underline font-semibold">byiringiromackson2@gmail.com</a>.
+                </p>
+            </Section>
+
+            <Section title="Troubleshooting">
+                <p>
+                    If you encounter any issues, please try the following steps first:
                 </p>
                 <ul className="list-decimal list-inside space-y-2 pl-4">
                     <li><strong>Video Upload Failed:</strong> Ensure you are using a standard video format (like MP4 or WebM) and that your browser has sufficient storage space.</li>
-                    <li><strong>AI Analysis Error:</strong> Check your internet connection. An API key for the Gemini API must be correctly configured in the application's environment for this feature to work.</li>
+                    <li><strong>AI Analysis Error:</strong> Check your internet connection. An API key for the AI service must be correctly configured in the application's environment for this feature to work.</li>
                     <li><strong>General Problems:</strong> Try refreshing the page or clearing your browser's cache for this site.</li>
                 </ul>
             </Section>
