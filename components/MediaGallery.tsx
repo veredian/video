@@ -8,6 +8,7 @@ import { SortAscIcon } from './icons/SortAscIcon';
 import { SortDescIcon } from './icons/SortDescIcon';
 import { MusicIcon } from './icons/MusicIcon';
 import { ImageIcon } from './icons/ImageIcon';
+import { FilterIcon } from './icons/FilterIcon';
 
 interface MediaGalleryProps {
   media: MediaData[];
@@ -19,12 +20,21 @@ interface MediaGalleryProps {
 type SortKey = 'date' | 'name';
 type SortDirection = 'asc' | 'desc';
 
+const DURATION_OPTIONS: Record<string, string> = {
+    'any': 'Any Duration',
+    '<1': '< 1 min',
+    '1-5': '1-5 min',
+    '>5': '> 5 min',
+};
+
 const MediaGallery: React.FC<MediaGalleryProps> = ({ media, onSelectMedia, onUploadClick, onDeleteMedia }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: SortDirection }>({
     key: 'date',
     direction: 'desc',
   });
+  const [typeFilter, setTypeFilter] = useState<MediaType | 'all'>('all');
+  const [durationFilter, setDurationFilter] = useState<string>('any');
 
   const handleDelete = (e: React.MouseEvent, mediaId: string) => {
     e.stopPropagation(); // Prevent onSelectMedia from firing
@@ -33,52 +43,65 @@ const MediaGallery: React.FC<MediaGalleryProps> = ({ media, onSelectMedia, onUpl
     }
   };
 
-  const filteredMedia = useMemo(() => media.filter(item =>
-    item.name.toLowerCase().includes(searchQuery.toLowerCase())
-  ), [media, searchQuery]);
-
-  const sortedMedia = useMemo(() => {
-    const sortableMedia = [...filteredMedia];
-    sortableMedia.sort((a, b) => {
-        let comparison = 0;
-        if (sortConfig.key === 'name') {
-            comparison = a.name.localeCompare(b.name);
-        } else { // date
-            comparison = parseInt(a.id, 10) - parseInt(b.id, 10);
+  const filteredAndSortedMedia = useMemo(() => {
+    const filtered = media
+      .filter(item => item.name.toLowerCase().includes(searchQuery.toLowerCase()))
+      .filter(item => typeFilter === 'all' || item.mediaType === typeFilter)
+      .filter(item => {
+        if (durationFilter === 'any' || item.mediaType === 'image') return true;
+        const duration = item.duration ?? 0;
+        switch (durationFilter) {
+          case '<1': return duration < 60;
+          case '1-5': return duration >= 60 && duration <= 300;
+          case '>5': return duration > 300;
+          default: return true;
         }
-        return sortConfig.direction === 'asc' ? comparison : -comparison;
+      });
+
+    return [...filtered].sort((a, b) => {
+      let comparison = 0;
+      if (sortConfig.key === 'name') {
+        comparison = a.name.localeCompare(b.name);
+      } else { // date
+        comparison = parseInt(a.id, 10) - parseInt(b.id, 10);
+      }
+      return sortConfig.direction === 'asc' ? comparison : -comparison;
     });
-    return sortableMedia;
-  }, [filteredMedia, sortConfig]);
+  }, [media, searchQuery, typeFilter, durationFilter, sortConfig]);
 
   const handleSort = (key: SortKey) => {
-    if (sortConfig.key === key) {
-        setSortConfig(prev => ({ ...prev, direction: prev.direction === 'asc' ? 'desc' : 'asc' }));
-    } else {
-        setSortConfig({ key, direction: key === 'date' ? 'desc' : 'asc' });
-    }
+    setSortConfig(prev => ({
+      key,
+      direction: prev.key === key ? (prev.direction === 'asc' ? 'desc' : 'asc') : (key === 'date' ? 'desc' : 'asc'),
+    }));
   };
   
   const toggleSortDirection = () => {
     setSortConfig(prev => ({ ...prev, direction: prev.direction === 'asc' ? 'desc' : 'asc' }));
   };
 
-  const SortButton: React.FC<{ sortKey: SortKey, children: React.ReactNode }> = ({ sortKey, children }) => {
-    const isActive = sortConfig.key === sortKey;
-    return (
-        <button
-            onClick={() => handleSort(sortKey)}
-            className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
-                isActive 
-                ? 'bg-cyan-500 text-white' 
-                : 'text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
-            }`}
-        >
-            {children}
-        </button>
-    );
-  };
+  const SortButton: React.FC<{ sortKey: SortKey, children: React.ReactNode }> = ({ sortKey, children }) => (
+    <button
+      onClick={() => handleSort(sortKey)}
+      className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
+        sortConfig.key === sortKey ? 'bg-cyan-500 text-white' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+      }`}
+    >
+      {children}
+    </button>
+  );
 
+  const TypeFilterButton: React.FC<{ filter: MediaType | 'all', children: React.ReactNode }> = ({ filter, children }) => (
+    <button
+      onClick={() => setTypeFilter(filter)}
+      className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
+        typeFilter === filter ? 'bg-cyan-500 text-white' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+      }`}
+    >
+      {children}
+    </button>
+  );
+  
   const renderIcon = (mediaType: MediaType, className: string) => {
     switch (mediaType) {
         case 'audio': return <MusicIcon className={className} />;
@@ -102,7 +125,7 @@ const MediaGallery: React.FC<MediaGalleryProps> = ({ media, onSelectMedia, onUpl
       </div>
       
       {media.length > 0 && (
-        <div className="flex flex-col sm:flex-row gap-4 mb-6">
+        <div className="space-y-4 mb-6">
           <div className="relative flex-grow">
             <span className="absolute left-3 top-1/2 -translate-y-1/2" aria-hidden="true">
               <SearchIcon className="w-5 h-5 text-gray-400 dark:text-gray-500" />
@@ -116,17 +139,43 @@ const MediaGallery: React.FC<MediaGalleryProps> = ({ media, onSelectMedia, onUpl
               aria-label="Search media"
             />
           </div>
-          <div className="flex items-center justify-center gap-2 bg-gray-100 dark:bg-gray-700/50 p-1 rounded-lg border border-gray-300 dark:border-gray-600">
-            <span className="text-sm font-medium text-gray-500 dark:text-gray-400 pl-2">Sort by:</span>
-            <SortButton sortKey="date">Date</SortButton>
-            <SortButton sortKey="name">Name</SortButton>
-            <button
-                onClick={toggleSortDirection}
-                className="p-1.5 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-md"
-                aria-label={`Sort ${sortConfig.direction === 'asc' ? 'descending' : 'ascending'}`}
-            >
-                {sortConfig.direction === 'asc' ? <SortAscIcon className="w-5 h-5" /> : <SortDescIcon className="w-5 h-5" />}
-            </button>
+          <div className="flex flex-col xl:flex-row gap-4">
+            <div className="flex items-center justify-center gap-2 bg-gray-100 dark:bg-gray-700/50 p-1 rounded-lg border border-gray-300 dark:border-gray-600">
+              <span className="text-sm font-medium text-gray-500 dark:text-gray-400 pl-2">Sort by:</span>
+              <SortButton sortKey="date">Date</SortButton>
+              <SortButton sortKey="name">Name</SortButton>
+              <button
+                  onClick={toggleSortDirection}
+                  className="p-1.5 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-md"
+                  aria-label={`Sort ${sortConfig.direction === 'asc' ? 'descending' : 'ascending'}`}
+              >
+                  {sortConfig.direction === 'asc' ? <SortAscIcon className="w-5 h-5" /> : <SortDescIcon className="w-5 h-5" />}
+              </button>
+            </div>
+            <div className="flex-grow flex flex-col sm:flex-row items-center gap-2 bg-gray-100 dark:bg-gray-700/50 p-1 rounded-lg border border-gray-300 dark:border-gray-600">
+              <div className="flex items-center gap-1 p-1 flex-wrap justify-center">
+                <FilterIcon className="w-5 h-5 text-gray-500 dark:text-gray-400 ml-2" />
+                <TypeFilterButton filter="all">All</TypeFilterButton>
+                <TypeFilterButton filter="video">Videos</TypeFilterButton>
+                <TypeFilterButton filter="audio">Audio</TypeFilterButton>
+                <TypeFilterButton filter="image">Images</TypeFilterButton>
+              </div>
+              <div className="relative flex items-center gap-1 p-1">
+                <select
+                  value={durationFilter}
+                  onChange={(e) => setDurationFilter(e.target.value)}
+                  className="text-sm font-medium bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-300 rounded-md py-1.5 px-3 border-transparent focus:outline-none focus:ring-2 focus:ring-cyan-500 transition-colors appearance-none disabled:opacity-50 disabled:cursor-not-allowed"
+                  aria-label="Filter by duration"
+                  disabled={typeFilter === 'image'}
+                >
+                  {Object.entries(DURATION_OPTIONS).map(([value, label]) => (
+                    <option key={value} value={value} className="bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -146,17 +195,17 @@ const MediaGallery: React.FC<MediaGalleryProps> = ({ media, onSelectMedia, onUpl
               Upload New Media
             </button>
         </div>
-      ) : sortedMedia.length === 0 ? (
+      ) : filteredAndSortedMedia.length === 0 ? (
         <div className="text-center py-16 px-6 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg">
           <SearchIcon className="w-16 h-16 mx-auto text-gray-400 dark:text-gray-500 mb-4" />
           <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200">No Media Found</h3>
           <p className="text-gray-500 dark:text-gray-400 mt-2">
-            Your search for "<span className="font-semibold text-gray-700 dark:text-gray-300">{searchQuery}</span>" did not match any files.
+            Your search and filter criteria did not match any files.
           </p>
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          {sortedMedia.map((item) => (
+          {filteredAndSortedMedia.map((item) => (
             <div
               key={item.id}
               onClick={() => onSelectMedia(item)}

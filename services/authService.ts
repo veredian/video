@@ -16,6 +16,7 @@ export interface MediaData {
   name: string;
   type: string; // The full MIME type
   mediaType: MediaType;
+  duration?: number; // in seconds
 }
 
 const USERS_KEY = 'NVNELtdUsers';
@@ -128,12 +129,36 @@ export const authService = {
          } else {
             return reject(new Error('Unsupported file type'));
          }
+
+         const getDuration = (file: File): Promise<number | undefined> => {
+          return new Promise((resolve) => {
+            if (file.type.startsWith('video/') || file.type.startsWith('audio/')) {
+              const url = URL.createObjectURL(file);
+              const mediaElement = document.createElement(file.type.startsWith('video/') ? 'video' : 'audio');
+              mediaElement.preload = 'metadata';
+              mediaElement.onloadedmetadata = () => {
+                URL.revokeObjectURL(url);
+                resolve(mediaElement.duration);
+              };
+              mediaElement.onerror = () => {
+                URL.revokeObjectURL(url);
+                resolve(undefined);
+              };
+              mediaElement.src = url;
+            } else {
+              resolve(undefined);
+            }
+          });
+        };
+
+        const duration = await getDuration(mediaFile);
         
          const mediaData: MediaData = {
           id: Date.now().toString(),
           name: mediaFile.name,
           type: mediaFile.type,
           mediaType: mediaType,
+          duration: duration,
         };
 
         try {
