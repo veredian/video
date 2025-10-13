@@ -2,12 +2,7 @@ import React from 'react';
 import ToggleSwitch from './ToggleSwitch';
 import { XIcon } from './icons/XIcon';
 import { SparklesIcon } from './icons/SparklesIcon';
-
-interface Settings {
-  theme: 'light' | 'dark';
-  loopVideo: boolean;
-  cinemaMode: boolean;
-}
+import { Settings } from '../App';
 
 interface SettingsModalProps {
   isOpen: boolean;

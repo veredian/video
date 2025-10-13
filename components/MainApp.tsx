@@ -12,60 +12,26 @@ import { LogoutIcon } from './icons/LogoutIcon';
 import { TrashIcon } from './icons/TrashIcon';
 import { DownloadIcon } from './icons/DownloadIcon';
 import { QuestionMarkIcon } from './icons/QuestionMarkIcon';
+import { PaintBrushIcon } from './icons/PaintBrushIcon';
 import { User, authService, VideoData } from '../services/authService';
 import { videoDBService } from '../services/videoDBService';
-
-interface Settings {
-  theme: 'light' | 'dark';
-  loopVideo: boolean;
-  cinemaMode: boolean;
-}
+import { Settings } from '../App';
 
 interface MainAppProps {
     user: User;
     onLogout: () => void;
+    settings: Settings;
+    onSettingsChange: (newSettings: Settings) => void;
 }
 
-const MainApp: React.FC<MainAppProps> = ({ user, onLogout }) => {
+const THEMES: Settings['theme'][] = ['light', 'dark', 'sunset', 'ocean', 'space'];
+
+const MainApp: React.FC<MainAppProps> = ({ user, onLogout, settings, onSettingsChange }) => {
   const [videos, setVideos] = useState<VideoData[]>(user.videos);
   const [selectedVideo, setSelectedVideo] = useState<VideoData | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
-  
-  const [settings, setSettings] = useState<Settings>(() => {
-    try {
-      const savedSettings = localStorage.getItem('NVNELtdSettings');
-      if (savedSettings) {
-        const parsed = JSON.parse(savedSettings);
-        return {
-          theme: parsed.theme || 'light',
-          loopVideo: parsed.loopVideo !== undefined ? parsed.loopVideo : true,
-          cinemaMode: parsed.cinemaMode !== undefined ? parsed.cinemaMode : true,
-        };
-      }
-    } catch (error) {
-      console.error("Could not parse settings from localStorage", error);
-    }
-    return {
-      theme: window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light',
-      loopVideo: true,
-      cinemaMode: true,
-    };
-  });
-
-  useEffect(() => {
-    if (settings.theme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-    try {
-      localStorage.setItem('NVNELtdSettings', JSON.stringify(settings));
-    } catch (error) {
-      console.error("Could not save settings to localStorage", error);
-    }
-  }, [settings]);
 
   const handleVideoUpload = useCallback(async (videoFile: File) => {
     const updatedUser = await authService.addVideoForCurrentUser(videoFile);
@@ -147,9 +113,15 @@ const MainApp: React.FC<MainAppProps> = ({ user, onLogout }) => {
     document.body.removeChild(link);
   }, [videoUrlForRender, selectedVideo]);
 
+  const handleCycleTheme = () => {
+    const currentIndex = THEMES.indexOf(settings.theme);
+    const nextIndex = (currentIndex + 1) % THEMES.length;
+    onSettingsChange({ ...settings, theme: THEMES[nextIndex] });
+  };
+
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-white flex flex-col items-center p-4 sm:p-6 lg:p-8 font-sans">
+    <div className="min-h-screen flex flex-col items-center p-4 sm:p-6 lg:p-8 font-sans">
       <div className="w-full max-w-6xl mx-auto">
         <header className="flex items-center justify-between mb-8 w-full">
             <div className="flex items-center gap-3">
@@ -158,11 +130,18 @@ const MainApp: React.FC<MainAppProps> = ({ user, onLogout }) => {
                 NV & NE ltd
               </h1>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-4">
                 <div className="text-right">
                     <p className="text-sm font-medium text-gray-900 dark:text-white truncate max-w-[150px] sm:max-w-xs" title={user.email}>{user.email}</p>
                     <p className="text-xs text-gray-500 dark:text-gray-400">Welcome back!</p>
                 </div>
+                 <button 
+                    onClick={handleCycleTheme}
+                    className="p-2 text-gray-500 hover:text-cyan-400 transition-colors duration-200"
+                    aria-label="Change theme"
+                >
+                    <PaintBrushIcon className="w-6 h-6" />
+                </button>
                 <button 
                     onClick={() => setIsSettingsOpen(true)}
                     className="p-2 text-gray-500 hover:text-cyan-400 transition-colors duration-200"
@@ -248,7 +227,7 @@ const MainApp: React.FC<MainAppProps> = ({ user, onLogout }) => {
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
         settings={settings}
-        onSettingsChange={setSettings}
+        onSettingsChange={onSettingsChange}
       />
       <HelpModal 
         isOpen={isHelpOpen}
