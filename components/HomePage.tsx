@@ -13,7 +13,7 @@ const HomePage: React.FC<HomePageProps> = ({ onEnter }) => {
             <div className="flex flex-col items-center justify-center gap-4 mb-6">
                 <Logo className="w-32 h-auto" />
                 <h1 className="text-5xl sm:text-7xl font-bold tracking-tight bg-gradient-to-r from-cyan-500 to-blue-500 text-transparent bg-clip-text">
-                    Video Hub
+                    NV & NE ltd
                 </h1>
             </div>
             <p className="text-xl sm:text-2xl text-gray-600 dark:text-gray-400 max-w-xl mx-auto">
@@ -34,7 +34,7 @@ const HomePage: React.FC<HomePageProps> = ({ onEnter }) => {
         </main>
 
         <footer className="text-center mt-16 text-gray-500 dark:text-gray-400 text-sm">
-          <p>&copy; {new Date().getFullYear()} Video Hub. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} NV & NE ltd. All rights reserved.</p>
         </footer>
       </div>
     </div>

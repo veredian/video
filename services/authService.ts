@@ -15,9 +15,9 @@ export interface VideoData {
   type: string;
 }
 
-const USERS_KEY = 'videoHubUsers';
-const CURRENT_USER_KEY = 'videoHubCurrentUser';
-const REMEMBERED_USER_KEY = 'videoHubRememberedUser';
+const USERS_KEY = 'NVNELtdUsers';
+const CURRENT_USER_KEY = 'NVNELtdCurrentUser';
+const REMEMBERED_USER_KEY = 'NVNELtdRememberedUser';
 
 const getUsers = (): Record<string, User> => {
   try {
@@ -50,6 +50,17 @@ export const authService = {
         users[email] = { email, password, videos: [] };
         saveUsers(users);
         resolve({ success: true, message: 'Signup successful. Please log in.' });
+      }, 500);
+    });
+  },
+
+  resendVerificationCode: (email: string): Promise<{ success: boolean; message: string }> => {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        console.log(`Simulating resending verification code to: ${email}`);
+        // In a real app, this would trigger an email service.
+        // For this demo, we just confirm the action was initiated.
+        resolve({ success: true, message: 'A new verification code has been sent.' });
       }, 500);
     });
   },

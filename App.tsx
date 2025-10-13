@@ -9,7 +9,7 @@ const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(authService.getCurrentUser());
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     try {
-      const savedTheme = localStorage.getItem('videoHubTheme');
+      const savedTheme = localStorage.getItem('NVNELtdTheme');
       if (savedTheme) return JSON.parse(savedTheme);
     } catch (error) {
       console.error("Could not parse theme from localStorage", error);
@@ -24,7 +24,7 @@ const App: React.FC = () => {
       document.documentElement.classList.remove('dark');
     }
     try {
-      localStorage.setItem('videoHubTheme', JSON.stringify(theme));
+      localStorage.setItem('NVNELtdTheme', JSON.stringify(theme));
     } catch (error) {
       console.error("Could not save theme to localStorage", error);
     }

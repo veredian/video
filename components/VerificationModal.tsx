@@ -5,21 +5,41 @@ interface VerificationModalProps {
   isOpen: boolean;
   onClose: () => void;
   onVerify: () => void;
+  onResend: () => void;
   email: string;
 }
 
 const SIMULATED_CODE = "123456";
+const INITIAL_COOLDOWN = 30;
+const RESEND_COOLDOWN = 60;
 
-const VerificationModal: React.FC<VerificationModalProps> = ({ isOpen, onClose, onVerify, email }) => {
+
+const VerificationModal: React.FC<VerificationModalProps> = ({ isOpen, onClose, onVerify, onResend, email }) => {
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
+  const [resendCooldown, setResendCooldown] = useState(INITIAL_COOLDOWN);
+  const [resendMessage, setResendMessage] = useState('');
 
   useEffect(() => {
     if (isOpen) {
       setCode('');
       setError('');
+      setResendCooldown(INITIAL_COOLDOWN);
+      setResendMessage('');
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    if (isOpen && resendCooldown > 0) {
+      const timerId = setTimeout(() => {
+        setResendCooldown(prev => prev - 1);
+      }, 1000);
+      return () => clearTimeout(timerId);
+    } else if (resendCooldown === 0) {
+        setResendMessage(''); // Clear message once cooldown is over
+    }
+  }, [isOpen, resendCooldown]);
+
 
   if (!isOpen) {
     return null;
@@ -32,6 +52,13 @@ const VerificationModal: React.FC<VerificationModalProps> = ({ isOpen, onClose, 
         setError('Invalid verification code. Please try again.');
     }
   }
+
+  const handleResend = () => {
+    onResend();
+    setResendCooldown(RESEND_COOLDOWN);
+    setResendMessage('A new code has been sent.');
+    setError(''); // Clear previous errors
+  };
 
   return (
     <div 
@@ -85,6 +112,21 @@ const VerificationModal: React.FC<VerificationModalProps> = ({ isOpen, onClose, 
             >
                 Verify & Create Account
             </button>
+
+            <div className="text-center text-sm text-gray-600 dark:text-gray-400 pt-2 h-10">
+                {resendCooldown > 0 ? (
+                    <span>You can resend the code in {resendCooldown} seconds.</span>
+                ) : (
+                    <button
+                        onClick={handleResend}
+                        className="text-cyan-500 hover:underline font-semibold disabled:text-gray-400 disabled:no-underline"
+                        disabled={resendCooldown > 0}
+                    >
+                        Didn't receive a code? Resend
+                    </button>
+                )}
+                {resendMessage && <p className="text-green-500 text-xs mt-1">{resendMessage}</p>}
+            </div>
         </div>
 
       </div>

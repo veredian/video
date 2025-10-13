@@ -5,10 +5,12 @@ import ShareOptions from './ShareOptions';
 import SettingsModal from './SettingsModal';
 import VideoGallery from './VideoGallery';
 import AskAiPanel from './AskAiPanel';
+import HelpModal from './HelpModal';
 import { Logo } from './icons/Logo';
 import { SettingsIcon } from './icons/SettingsIcon';
 import { LogoutIcon } from './icons/LogoutIcon';
 import { TrashIcon } from './icons/TrashIcon';
+import { QuestionMarkIcon } from './icons/QuestionMarkIcon';
 import { User, authService, VideoData } from '../services/authService';
 import { videoDBService } from '../services/videoDBService';
 
@@ -28,10 +30,11 @@ const MainApp: React.FC<MainAppProps> = ({ user, onLogout }) => {
   const [selectedVideo, setSelectedVideo] = useState<VideoData | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
   
   const [settings, setSettings] = useState<Settings>(() => {
     try {
-      const savedSettings = localStorage.getItem('videoHubSettings');
+      const savedSettings = localStorage.getItem('NVNELtdSettings');
       if (savedSettings) {
         const parsed = JSON.parse(savedSettings);
         return {
@@ -57,7 +60,7 @@ const MainApp: React.FC<MainAppProps> = ({ user, onLogout }) => {
       document.documentElement.classList.remove('dark');
     }
     try {
-      localStorage.setItem('videoHubSettings', JSON.stringify(settings));
+      localStorage.setItem('NVNELtdSettings', JSON.stringify(settings));
     } catch (error) {
       console.error("Could not save settings to localStorage", error);
     }
@@ -140,7 +143,7 @@ const MainApp: React.FC<MainAppProps> = ({ user, onLogout }) => {
             <div className="flex items-center gap-3">
               <Logo className="w-16 h-auto" />
               <h1 className="hidden sm:block text-3xl font-bold tracking-tight bg-gradient-to-r from-cyan-500 to-blue-500 text-transparent bg-clip-text">
-                Video Hub
+                NV & NE ltd
               </h1>
             </div>
             <div className="flex items-center gap-4">
@@ -210,15 +213,27 @@ const MainApp: React.FC<MainAppProps> = ({ user, onLogout }) => {
         </main>
         
         <footer className="text-center mt-8 text-gray-500 dark:text-gray-400 text-sm">
-          <p>&copy; {new Date().getFullYear()} Video Hub. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} NV & NE ltd. All rights reserved.</p>
         </footer>
       </div>
+
+      <button
+        onClick={() => setIsHelpOpen(true)}
+        className="fixed bottom-6 right-6 sm:bottom-8 sm:right-8 z-40 w-14 h-14 bg-gradient-to-r from-cyan-400 to-blue-500 text-white rounded-full flex items-center justify-center shadow-lg hover:scale-110 transform transition-transform duration-200"
+        aria-label="Open help and about modal"
+      >
+        <QuestionMarkIcon className="w-8 h-8" />
+      </button>
+
       <SettingsModal 
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
         settings={settings}
-        // FIX: The prop is 'onSettingsChange', not 'onSettings-change'.
         onSettingsChange={setSettings}
+      />
+      <HelpModal 
+        isOpen={isHelpOpen}
+        onClose={() => setIsHelpOpen(false)}
       />
     </div>
   );

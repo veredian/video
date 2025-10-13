@@ -66,6 +66,11 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
     setIsLoading(false);
   }
 
+  const handleResendCode = async () => {
+    await authService.resendVerificationCode(email);
+    // The modal itself will display a success message.
+  };
+
   const switchMode = (newMode: AuthMode) => {
     setMode(newMode);
     setError('');
@@ -83,7 +88,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
                 <div className="flex items-center justify-center gap-3 mb-4">
                     <Logo className="w-16 h-auto" />
                     <h1 className="text-4xl sm:text-5xl font-bold tracking-tight bg-gradient-to-r from-cyan-500 to-blue-500 text-transparent bg-clip-text">
-                        Video Hub
+                        NV & NE ltd
                     </h1>
                 </div>
                 <p className="text-lg text-gray-600 dark:text-gray-400">
@@ -183,6 +188,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
             isOpen={showVerification}
             onClose={() => setShowVerification(false)}
             onVerify={handleVerificationSuccess}
+            onResend={handleResendCode}
             email={email}
         />
     </div>
