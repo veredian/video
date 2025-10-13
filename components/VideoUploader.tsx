@@ -1,20 +1,10 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { UploadIcon } from './icons/UploadIcon';
 import { SpinnerIcon } from './icons/SpinnerIcon';
-import { VideoData } from '../services/authService';
 
 interface VideoUploaderProps {
-  onVideoUpload: (videoData: VideoData) => void;
+  onVideoUpload: (videoFile: File) => void;
 }
-
-const fileToBase64 = (file: File): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = error => reject(error);
-  });
-};
 
 const VideoUploader: React.FC<VideoUploaderProps> = ({ onVideoUpload }) => {
   const [isDragging, setIsDragging] = useState(false);
@@ -41,15 +31,13 @@ const VideoUploader: React.FC<VideoUploaderProps> = ({ onVideoUpload }) => {
       setFileName(file.name);
       setProgress(0);
       
-      const base64Data = await fileToBase64(file);
-
       // Simulate processing time
       progressIntervalRef.current = window.setInterval(() => {
         setProgress(prev => {
           if (prev >= 100) {
             if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
             setTimeout(() => {
-              onVideoUpload({ name: file.name, type: file.type, data: base64Data, id: Date.now().toString() });
+              onVideoUpload(file);
             }, 300);
             return 100;
           }

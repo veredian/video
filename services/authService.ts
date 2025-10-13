@@ -1,6 +1,7 @@
 // A mock auth service to simulate a backend using localStorage.
 // In a real app, this would make API calls to a secure server.
 // WARNING: Passwords are stored in plaintext. This is NOT secure and is for demonstration purposes only.
+import { videoDBService } from './videoDBService';
 
 export interface User {
   email: string;
@@ -12,7 +13,6 @@ export interface VideoData {
   id: string;
   name: string;
   type: string;
-  data: string; // Base64 encoded video data
 }
 
 const USERS_KEY = 'videoHubUsers';
@@ -28,7 +28,13 @@ const getUsers = (): Record<string, User> => {
 };
 
 const saveUsers = (users: Record<string, User>) => {
-  localStorage.setItem(USERS_KEY, JSON.stringify(users));
+  try {
+    localStorage.setItem(USERS_KEY, JSON.stringify(users));
+  } catch (error) {
+    console.error("Failed to save users to localStorage. This might be due to storage limits if video data is being saved here.", error);
+    // In a real app, you would have better error handling here.
+    alert("Error: Could not save user data. The browser's local storage might be full.");
+  }
 };
 
 export const authService = {
@@ -80,18 +86,29 @@ export const authService = {
     return null;
   },
   
-  addVideoForCurrentUser: (videoData: VideoData): Promise<User> => {
-    return new Promise((resolve, reject) => {
+  addVideoForCurrentUser: (videoFile: File): Promise<User> => {
+    return new Promise(async (resolve, reject) => {
       const userEmail = localStorage.getItem(CURRENT_USER_KEY);
       if (!userEmail) return reject(new Error("No user logged in"));
 
       const users = getUsers();
       const user = users[userEmail];
       if (user) {
-        user.videos.push(videoData);
-        saveUsers(users);
-        const { password, ...userWithoutPassword } = user;
-        resolve(userWithoutPassword);
+         const videoData: VideoData = {
+          id: Date.now().toString(),
+          name: videoFile.name,
+          type: videoFile.type,
+        };
+        try {
+          await videoDBService.saveVideo(videoData.id, videoFile);
+          user.videos.push(videoData);
+          saveUsers(users);
+          const { password, ...userWithoutPassword } = user;
+          resolve(userWithoutPassword);
+        } catch (error) {
+           console.error("Failed to save video:", error);
+           reject(new Error("Could not save video file."));
+        }
       } else {
         reject(new Error("Current user not found"));
       }

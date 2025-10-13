@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import VideoUploader from './VideoUploader';
 import VideoPlayer from './VideoPlayer';
 import ShareOptions from './ShareOptions';
@@ -9,6 +9,7 @@ import { FilmIcon } from './icons/FilmIcon';
 import { SettingsIcon } from './icons/SettingsIcon';
 import { LogoutIcon } from './icons/LogoutIcon';
 import { User, authService, VideoData } from '../services/authService';
+import { videoDBService } from '../services/videoDBService';
 
 interface Settings {
   theme: 'light' | 'dark';
@@ -61,10 +62,11 @@ const MainApp: React.FC<MainAppProps> = ({ user, onLogout }) => {
     }
   }, [settings]);
 
-  const handleVideoUpload = useCallback(async (videoData: VideoData) => {
-    const updatedUser = await authService.addVideoForCurrentUser(videoData);
+  const handleVideoUpload = useCallback(async (videoFile: File) => {
+    const updatedUser = await authService.addVideoForCurrentUser(videoFile);
+    const newVideo = updatedUser.videos[updatedUser.videos.length - 1];
     setVideos(updatedUser.videos);
-    setSelectedVideo(videoData);
+    setSelectedVideo(newVideo);
     setIsUploading(false);
   }, []);
 
@@ -76,51 +78,44 @@ const MainApp: React.FC<MainAppProps> = ({ user, onLogout }) => {
     setSelectedVideo(null);
   }, []);
   
-  const selectedVideoUrl = useMemo(() => {
-    if(!selectedVideo) return null;
-    
-    // Convert base64 to blob to create a usable object URL
-    const fetchRes = fetch(selectedVideo.data);
-    const blobPromise = fetchRes.then(res => res.blob());
-    
-    let url: string | null = null;
-    blobPromise.then(blob => {
-      url = URL.createObjectURL(blob);
-    });
-
-    // This is a bit of a hack for memoization, as creating object URLs is a side effect.
-    // In a real app with a backend, this would just be a direct URL to the video asset.
-    return {
-        dispose: () => {
-            if(url) URL.revokeObjectURL(url);
-        },
-        getUrl: async (): Promise<string> => {
-            if (url) return url;
-            const blob = await blobPromise;
-            url = URL.createObjectURL(blob);
-            return url;
-        }
-    }
-  }, [selectedVideo]);
-  
   const [videoUrlForRender, setVideoUrlForRender] = useState<string | null>(null);
 
   useEffect(() => {
-      let active = true;
-      if (selectedVideoUrl) {
-          selectedVideoUrl.getUrl().then(url => {
-            if(active) setVideoUrlForRender(url);
-          });
-      } else {
-          setVideoUrlForRender(null);
-      }
-      return () => {
-        active = false;
-        if (selectedVideoUrl) {
-            selectedVideoUrl.dispose();
+    if (!selectedVideo) {
+      setVideoUrlForRender(null);
+      return;
+    }
+
+    let objectUrl: string | null = null;
+    let isMounted = true;
+
+    const createUrl = async () => {
+      try {
+        const blob = await videoDBService.getVideo(selectedVideo.id);
+        if (isMounted && blob) {
+            objectUrl = URL.createObjectURL(blob);
+            setVideoUrlForRender(objectUrl);
+        } else if (isMounted) {
+            console.error(`Video with id ${selectedVideo.id} not found in DB.`);
+            setVideoUrlForRender(null);
+        }
+      } catch (error) {
+        console.error("Error creating object URL for video", error);
+        if (isMounted) {
+            setVideoUrlForRender(null);
         }
       }
-  }, [selectedVideoUrl]);
+    };
+
+    createUrl();
+
+    return () => {
+      isMounted = false;
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+      }
+    };
+  }, [selectedVideo]);
 
 
   return (
@@ -169,7 +164,7 @@ const MainApp: React.FC<MainAppProps> = ({ user, onLogout }) => {
                   </div>
                   <div className="flex flex-col gap-4">
                     <ShareOptions videoUrl={videoUrlForRender} fileName={selectedVideo.name} />
-                    <AskAiPanel videoName={selectedVideo.name} />
+                    <AskAiPanel video={selectedVideo} />
                   </div>
                 </div>
                 <div className="flex justify-center mt-8">
@@ -181,10 +176,10 @@ const MainApp: React.FC<MainAppProps> = ({ user, onLogout }) => {
                   </button>
                 </div>
              </div>
-          ) : isUploading ? (
-            <VideoUploader onVideoUpload={handleVideoUpload} />
+          ) : videos.length > 0 && !isUploading ? (
+             <VideoGallery videos={videos} onSelectVideo={handleSelectVideo} onUploadClick={() => setIsUploading(true)} />
           ) : (
-            <VideoGallery videos={videos} onSelectVideo={handleSelectVideo} onUploadClick={() => setIsUploading(true)} />
+            <VideoUploader onVideoUpload={handleVideoUpload} />
           )}
         </main>
         
