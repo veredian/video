@@ -10,6 +10,7 @@ import { Logo } from './icons/Logo';
 import { SettingsIcon } from './icons/SettingsIcon';
 import { LogoutIcon } from './icons/LogoutIcon';
 import { TrashIcon } from './icons/TrashIcon';
+import { DownloadIcon } from './icons/DownloadIcon';
 import { QuestionMarkIcon } from './icons/QuestionMarkIcon';
 import { User, authService, VideoData } from '../services/authService';
 import { videoDBService } from '../services/videoDBService';
@@ -135,6 +136,17 @@ const MainApp: React.FC<MainAppProps> = ({ user, onLogout }) => {
     };
   }, [selectedVideo]);
 
+  const handleDownloadVideo = useCallback(() => {
+    if (!videoUrlForRender || !selectedVideo) return;
+
+    const link = document.createElement('a');
+    link.href = videoUrlForRender;
+    link.download = selectedVideo.name;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }, [videoUrlForRender, selectedVideo]);
+
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-white flex flex-col items-center p-4 sm:p-6 lg:p-8 font-sans">
@@ -185,12 +197,19 @@ const MainApp: React.FC<MainAppProps> = ({ user, onLogout }) => {
                     <AskAiPanel video={selectedVideo} />
                   </div>
                 </div>
-                <div className="flex justify-center items-center gap-4 mt-8">
+                <div className="flex flex-wrap justify-center items-center gap-4 mt-8">
                   <button
                     onClick={handleBackToGallery}
                     className="bg-cyan-500 hover:bg-cyan-600 text-white font-semibold py-2 px-6 rounded-lg transition-colors duration-300 shadow-lg shadow-cyan-500/20"
                   >
                     Back to Gallery
+                  </button>
+                  <button
+                    onClick={handleDownloadVideo}
+                    className="flex items-center gap-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300 shadow-lg shadow-gray-500/20"
+                  >
+                    <DownloadIcon className="w-5 h-5" />
+                    Download
                   </button>
                    <button
                     onClick={() => {
@@ -201,7 +220,7 @@ const MainApp: React.FC<MainAppProps> = ({ user, onLogout }) => {
                     className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300 shadow-lg shadow-red-500/20"
                   >
                     <TrashIcon className="w-5 h-5" />
-                    Delete Video
+                    Delete
                   </button>
                 </div>
              </div>
