@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
+import { LanguageProvider } from './i18n/LanguageContext';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -10,11 +11,8 @@ if (!rootElement) {
 const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
-    <App />
+    <LanguageProvider>
+      <App />
+    </LanguageProvider>
   </React.StrictMode>
-);<form action="https://formsubmit.co/youremail@example.com" method="POST">
-  <input type="text" name="name" placeholder="Izina" required>
-  <input type="email" name="email" placeholder="Email" required>
-  <textarea name="message" placeholder="Ubutumwa" required></textarea>
-  <button type="submit">Ohereza</button>
-</form>
+);

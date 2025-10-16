@@ -9,6 +9,7 @@ import { PictureInPictureIcon } from './icons/PictureInPictureIcon';
 import { SpinnerIcon } from './icons/SpinnerIcon';
 import { BanIcon } from './icons/BanIcon';
 import { MediaType } from '../services/authService';
+import { useTranslation } from '../i18n/LanguageContext';
 
 interface MediaPlayerProps {
   src: string;
@@ -37,6 +38,7 @@ const PLAYBACK_RATES = [0.5, 0.75, 1, 1.25, 1.5, 2];
 const MediaPlayer: React.FC<MediaPlayerProps> = ({ 
     src, mediaType, fileName, loop, cinemaMode, showWatermark, watermarkText, defaultPlaybackSpeed, mimeType
 }) => {
+  const { t } = useTranslation();
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
   const [volume, setVolume] = useState(1);
@@ -291,8 +293,8 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
         {loadError && (
           <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/60 text-white p-4 text-center">
             <BanIcon className="w-12 h-12 text-red-400 mb-2" />
-            <p className="font-semibold">Could not load media.</p>
-            <p className="text-sm text-gray-300">The file may be corrupted or missing.</p>
+            <p className="font-semibold">{t('player.errorTitle')}</p>
+            <p className="text-sm text-gray-300">{t('player.errorDescription')}</p>
           </div>
         )}
         

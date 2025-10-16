@@ -5,6 +5,8 @@ import { SpinnerIcon } from './icons/SpinnerIcon';
 import VerificationModal from './VerificationModal';
 import { EyeIcon } from './icons/EyeIcon';
 import { EyeSlashIcon } from './icons/EyeSlashIcon';
+import LanguageSwitcher from './LanguageSwitcher';
+import { useTranslation } from '../i18n/LanguageContext';
 
 interface AuthPageProps {
   onLogin: (user: User) => void;
@@ -13,6 +15,7 @@ interface AuthPageProps {
 type AuthMode = 'login' | 'signup';
 
 const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
+  const { t } = useTranslation();
   const [mode, setMode] = useState<AuthMode>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -44,7 +47,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
       if (result.success && result.user) {
         onLogin(result.user);
       } else {
-        setError(result.message);
+        setError(t(result.message));
       }
     } else { // signup
       setShowVerification(true);
@@ -57,11 +60,11 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
     setIsLoading(true);
     const result = await authService.signup(email, password);
     if(result.success) {
-        setSuccessMessage(result.message);
+        setSuccessMessage(t(result.message));
         setMode('login'); // Switch to login tab after successful signup
         setPassword('');
     } else {
-        setError(result.message);
+        setError(t(result.message));
     }
     setIsLoading(false);
   }
@@ -83,6 +86,9 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-white flex flex-col items-center justify-center p-4 font-sans">
+        <div className="absolute top-4 right-4 z-10">
+            <LanguageSwitcher />
+        </div>
         <div className="w-full max-w-md">
             <header className="text-center mb-8">
                 <div className="flex items-center justify-center gap-3 mb-4">
@@ -92,23 +98,23 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
                     </h1>
                 </div>
                 <p className="text-lg text-gray-600 dark:text-gray-400">
-                    Sign in or create an account to continue.
+                    {t('auth.greeting')}
                 </p>
             </header>
             
             <main className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm rounded-2xl shadow-2xl shadow-cyan-500/10 p-8 border border-gray-300 dark:border-gray-700">
                 <div className="flex border-b border-gray-300 dark:border-gray-600 mb-6">
                     <button onClick={() => switchMode('login')} className={`flex-1 py-2 text-center font-semibold transition-colors duration-200 ${mode === 'login' ? 'text-cyan-500 border-b-2 border-cyan-500' : 'text-gray-500 hover:text-cyan-400'}`}>
-                        Login
+                        {t('auth.login')}
                     </button>
                     <button onClick={() => switchMode('signup')} className={`flex-1 py-2 text-center font-semibold transition-colors duration-200 ${mode === 'signup' ? 'text-cyan-500 border-b-2 border-cyan-500' : 'text-gray-500 hover:text-cyan-400'}`}>
-                        Sign Up
+                        {t('auth.signup')}
                     </button>
                 </div>
 
                 <form onSubmit={handleAuthAction} className="space-y-6">
                     <div>
-                        <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email Address</label>
+                        <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('auth.emailLabel')}</label>
                         <input
                             id="email"
                             name="email"
@@ -118,11 +124,11 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-cyan-500 focus:border-cyan-500"
-                            placeholder="you@example.com"
+                            placeholder={t('auth.emailPlaceholder')}
                         />
                     </div>
                     <div>
-                        <label htmlFor="password"  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Password</label>
+                        <label htmlFor="password"  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('auth.passwordLabel')}</label>
                         <div className="relative">
                             <input
                                 id="password"
@@ -134,7 +140,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 className="w-full px-3 py-2 pr-10 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-cyan-500 focus:border-cyan-500"
-                                placeholder="••••••••"
+                                placeholder={t('auth.passwordPlaceholder')}
                             />
                             <button
                                 type="button"
@@ -163,7 +169,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
                                 className="h-4 w-4 text-cyan-600 focus:ring-cyan-500 border-gray-300 dark:border-gray-600 rounded bg-gray-50 dark:bg-gray-700"
                                 />
                                 <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900 dark:text-gray-300">
-                                Remember me
+                                {t('auth.rememberMe')}
                                 </label>
                             </div>
                         </div>
@@ -179,7 +185,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
                         className="w-full flex justify-center items-center bg-gradient-to-r from-cyan-400 to-blue-500 hover:from-cyan-500 hover:to-blue-600 text-white font-bold py-2 px-4 rounded-md transition-all duration-300 transform hover:scale-105 shadow-lg shadow-cyan-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         {isLoading && <SpinnerIcon className="w-5 h-5 mr-2 animate-spin" />}
-                        {mode === 'login' ? 'Log In' : 'Create Account'}
+                        {mode === 'login' ? t('auth.logIn') : t('auth.createAccount')}
                     </button>
                 </form>
             </main>

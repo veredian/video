@@ -6,6 +6,7 @@ import { TagIcon } from './icons/TagIcon';
 import { ClockIcon } from './icons/ClockIcon';
 import { BanIcon } from './icons/BanIcon';
 import { Settings } from '../App';
+import { useTranslation } from '../i18n/LanguageContext';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -18,6 +19,8 @@ interface SettingsModalProps {
 const PLAYBACK_SPEED_OPTIONS = [1, 1.25, 1.5, 2];
 
 const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, settings, onSettingsChange, onClearAllMedia }) => {
+  const { t } = useTranslation();
+
   if (!isOpen) {
     return null;
   }
@@ -43,7 +46,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, settings
   };
 
   const handleClearClick = () => {
-    if (window.confirm('Are you sure you want to delete ALL your media? This action is permanent and cannot be undone.')) {
+    if (window.confirm(t('settings.confirmClearAll'))) {
         onClearAllMedia();
         onClose();
     }
@@ -62,7 +65,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, settings
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-6">
-          <h2 id="settings-title" className="text-2xl font-bold text-gray-900 dark:text-white">Settings</h2>
+          <h2 id="settings-title" className="text-2xl font-bold text-gray-900 dark:text-white">{t('settings.title')}</h2>
           <button 
             onClick={onClose}
             className="p-1 text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white rounded-full transition-colors"
@@ -75,8 +78,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, settings
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="font-medium text-gray-800 dark:text-gray-200">Dark Mode</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Reduce glare and improve night viewing.</p>
+              <p className="font-medium text-gray-800 dark:text-gray-200">{t('settings.darkMode')}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{t('settings.darkModeDesc')}</p>
             </div>
             <ToggleSwitch 
               label="dark-mode"
@@ -89,8 +92,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, settings
 
           <div className="flex items-center justify-between">
             <div>
-              <p className="font-medium text-gray-800 dark:text-gray-200">Loop Media</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Automatically replay videos/audio when they end.</p>
+              <p className="font-medium text-gray-800 dark:text-gray-200">{t('settings.loopMedia')}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{t('settings.loopMediaDesc')}</p>
             </div>
             <ToggleSwitch 
               label="loop-video"
@@ -105,9 +108,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, settings
             <div>
               <div className="flex items-center gap-2">
                 <SparklesIcon className="w-5 h-5 text-cyan-400" />
-                <p className="font-medium text-gray-800 dark:text-gray-200">Cinema Mode</p>
+                <p className="font-medium text-gray-800 dark:text-gray-200">{t('settings.cinemaMode')}</p>
               </div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Creates an immersive background glow for videos.</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{t('settings.cinemaModeDesc')}</p>
             </div>
             <ToggleSwitch 
               label="cinema-mode"
@@ -122,9 +125,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, settings
             <div>
               <div className="flex items-center gap-2">
                 <TagIcon className="w-5 h-5 text-cyan-400" />
-                <p className="font-medium text-gray-800 dark:text-gray-200">Show Watermark</p>
+                <p className="font-medium text-gray-800 dark:text-gray-200">{t('settings.showWatermark')}</p>
               </div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Display your name on videos.</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{t('settings.showWatermarkDesc')}</p>
             </div>
             <ToggleSwitch 
               label="show-watermark"
@@ -138,9 +141,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, settings
           <div>
             <div className="flex items-center gap-2 mb-2">
               <ClockIcon className="w-5 h-5 text-cyan-400" />
-              <p className="font-medium text-gray-800 dark:text-gray-200">Default Playback Speed</p>
+              <p className="font-medium text-gray-800 dark:text-gray-200">{t('settings.defaultPlaybackSpeed')}</p>
             </div>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">Set the default speed for videos and audio.</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">{t('settings.defaultPlaybackSpeedDesc')}</p>
             <div className="flex items-center justify-around p-1 bg-gray-100 dark:bg-gray-900/50 rounded-lg">
                 {PLAYBACK_SPEED_OPTIONS.map(speed => (
                     <button 
@@ -163,14 +166,14 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, settings
           <div>
             <div className="flex items-center gap-2 mb-2">
               <BanIcon className="w-5 h-5 text-red-500" />
-              <p className="font-medium text-gray-800 dark:text-gray-200">Data Management</p>
+              <p className="font-medium text-gray-800 dark:text-gray-200">{t('settings.dataManagement')}</p>
             </div>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">Permanently delete all uploaded media from your browser's storage. This cannot be undone.</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">{t('settings.dataManagementDesc')}</p>
             <button
               onClick={handleClearClick}
               className="w-full flex justify-center items-center gap-2 bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-md transition-colors duration-300 shadow-lg shadow-red-500/20"
             >
-              Clear All Media Data
+              {t('settings.clearAllMedia')}
             </button>
           </div>
         </div>

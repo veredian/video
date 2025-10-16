@@ -1,12 +1,14 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { UploadIcon } from './icons/UploadIcon';
 import { SpinnerIcon } from './icons/SpinnerIcon';
+import { useTranslation } from '../i18n/LanguageContext';
 
 interface MediaUploaderProps {
   onMediaUpload: (mediaFile: File) => void;
 }
 
 const MediaUploader: React.FC<MediaUploaderProps> = ({ onMediaUpload }) => {
+  const { t } = useTranslation();
   const [isDragging, setIsDragging] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -46,9 +48,9 @@ const MediaUploader: React.FC<MediaUploaderProps> = ({ onMediaUpload }) => {
       }, 50);
 
     } else if (file) {
-      alert('Please upload a valid video, audio, or image file.');
+      alert(t('uploader.errorInvalidFile'));
     }
-  }, [onMediaUpload, isProcessing]);
+  }, [onMediaUpload, isProcessing, t]);
 
   const handleDragEnter = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     if (isProcessing) return;
@@ -95,7 +97,7 @@ const MediaUploader: React.FC<MediaUploaderProps> = ({ onMediaUpload }) => {
     return (
       <div className="flex flex-col items-center justify-center p-10 sm:p-16 text-center">
         <SpinnerIcon className="w-16 h-16 mx-auto mb-4 text-cyan-500 animate-spin" />
-        <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Processing...</h3>
+        <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">{t('uploader.processing')}</h3>
         <p className="text-sm text-gray-500 dark:text-gray-400 truncate w-full max-w-xs mb-4" title={fileName}>{fileName}</p>
         <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
           <div 
@@ -134,10 +136,10 @@ const MediaUploader: React.FC<MediaUploaderProps> = ({ onMediaUpload }) => {
       <div className="text-center">
         <UploadIcon className={`w-16 h-16 mx-auto mb-4 transition-colors duration-300 ${isDragging ? 'text-cyan-400' : 'text-gray-400 dark:text-gray-500 group-hover:text-cyan-400'}`} />
         <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-          Drag & Drop your media here
+          {t('uploader.title')}
         </h3>
-        <p className="text-gray-500 dark:text-gray-400">or click to browse your files</p>
-        <p className="text-xs text-gray-600 dark:text-gray-500 mt-4">Supports videos, audio, and images</p>
+        <p className="text-gray-500 dark:text-gray-400">{t('uploader.subtitle')}</p>
+        <p className="text-xs text-gray-600 dark:text-gray-500 mt-4">{t('uploader.supports')}</p>
       </div>
     </div>
   );

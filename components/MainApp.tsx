@@ -16,6 +16,8 @@ import { PaintBrushIcon } from './icons/PaintBrushIcon';
 import { User, authService, MediaData } from '../services/authService';
 import { mediaDBService } from '../services/mediaDBService';
 import { Settings } from '../App';
+import LanguageSwitcher from './LanguageSwitcher';
+import { useTranslation } from '../i18n/LanguageContext';
 
 interface MainAppProps {
     user: User;
@@ -27,6 +29,7 @@ interface MainAppProps {
 const THEMES: Settings['theme'][] = ['light', 'dark', 'sunset', 'ocean', 'space'];
 
 const MainApp: React.FC<MainAppProps> = ({ user, onLogout, settings, onSettingsChange }) => {
+  const { t } = useTranslation();
   const [media, setMedia] = useState<MediaData[]>(user.media);
   const [selectedMedia, setSelectedMedia] = useState<MediaData | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -143,10 +146,13 @@ const MainApp: React.FC<MainAppProps> = ({ user, onLogout, settings, onSettingsC
                 NV & NE ltd
               </h1>
             </div>
-            <div className="flex items-center gap-2 sm:gap-4">
+            <div className="flex items-center gap-1 sm:gap-2">
+                <div className="hidden md:block">
+                  <LanguageSwitcher />
+                </div>
                 <div className="text-right">
                     <p className="text-sm font-medium text-gray-900 dark:text-white truncate max-w-[150px] sm:max-w-xs" title={user.email}>{user.email}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Welcome back!</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{t('main.welcomeBack')}</p>
                 </div>
                  <button 
                     onClick={handleCycleTheme}
@@ -200,25 +206,25 @@ const MainApp: React.FC<MainAppProps> = ({ user, onLogout, settings, onSettingsC
                     onClick={handleBackToGallery}
                     className="bg-cyan-500 hover:bg-cyan-600 text-white font-semibold py-2 px-6 rounded-lg transition-colors duration-300 shadow-lg shadow-cyan-500/20"
                   >
-                    Back to Gallery
+                    {t('main.backToGallery')}
                   </button>
                   <button
                     onClick={handleDownloadMedia}
                     className="flex items-center gap-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300 shadow-lg shadow-gray-500/20"
                   >
                     <DownloadIcon className="w-5 h-5" />
-                    Download
+                    {t('main.download')}
                   </button>
                    <button
                     onClick={() => {
-                        if (window.confirm('Are you sure you want to delete this media? This action cannot be undone.')) {
+                        if (window.confirm(t('main.confirmDelete'))) {
                             handleDeleteMedia(selectedMedia.id);
                         }
                     }}
                     className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300 shadow-lg shadow-red-500/20"
                   >
                     <TrashIcon className="w-5 h-5" />
-                    Delete
+                    {t('main.delete')}
                   </button>
                 </div>
              </div>
@@ -230,7 +236,7 @@ const MainApp: React.FC<MainAppProps> = ({ user, onLogout, settings, onSettingsC
         </main>
         
         <footer className="text-center mt-8 text-gray-500 dark:text-gray-400 text-sm">
-          <p>Made by Mackson</p>
+          <p>{t('main.creator')}</p>
         </footer>
       </div>
 

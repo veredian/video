@@ -1,6 +1,7 @@
 import React from 'react';
 import { XIcon } from './icons/XIcon';
 import { Logo } from './icons/Logo';
+import { useTranslation } from '../i18n/LanguageContext';
 
 interface HelpModalProps {
   isOpen: boolean;
@@ -8,6 +9,8 @@ interface HelpModalProps {
 }
 
 const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
+  const { t } = useTranslation();
+
   if (!isOpen) {
     return null;
   }
@@ -38,7 +41,7 @@ const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
         <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
                 <Logo className="w-12 h-auto" />
-                <h2 id="help-title" className="text-2xl font-bold text-gray-900 dark:text-white">About NV & NE ltd</h2>
+                <h2 id="help-title" className="text-2xl font-bold text-gray-900 dark:text-white">{t('help.title')}</h2>
             </div>
           <button 
             onClick={onClose}
@@ -50,70 +53,57 @@ const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
         </div>
         
         <div className="overflow-y-auto max-h-[70vh] pr-4 -mr-4">
-            <Section title="High-Level Summary">
+            <Section title={t('help.summaryTitle')}>
                 <p>
-                    This application is a sophisticated, modern web application that functions as a secure, personal video management system running entirely in your browser. It's a <span className="font-bold bg-gradient-to-r from-cyan-500 to-blue-500 text-transparent bg-clip-text">mackson development Software</span> where users can sign up, log in, manage a private library of their videos, and use a powerful AI to analyze and answer questions about video content.
+                    {t('help.summaryText', { creator: 'Eric tech' })}
                 </p>
             </Section>
 
-            <Section title="Key Features">
+            <Section title={t('help.featuresTitle')}>
                 <ul className="list-disc list-inside space-y-3">
-                    <li>
-                        <strong>Secure User Authentication:</strong> Includes a full sign-up, login, and email verification flow with "Remember me" and logout functionality.
-                    </li>
-                    <li>
-                        <strong>Robust Video Management:</strong> Uses your browser's <strong>IndexedDB</strong> for fast, private, and offline-functional video storage. A user-friendly drag & drop uploader makes adding videos simple.
-                    </li>
-                    <li>
-                        <strong>Advanced Video Player:</strong> Features a custom player and a standout <strong>Cinema Mode</strong> that creates an immersive, blurred background glow from the video's colors.
-                    </li>
-                    <li>
-                        <strong>AI-Powered Video Analysis:</strong> The app's most powerful feature. You can ask the AI for a summary of the video or ask specific questions about its content. The app securely sends video data to an advanced AI model for analysis.
-                    </li>
-                    <li>
-                        <strong>Easy Sharing Options:</strong> Instantly generate a shareable link or an HTML <code>&lt;iframe&gt;</code> embed code for any video. Note that these are temporary and session-based.
-                    </li>
-                     <li>
-                        <strong>Dynamic Video Watermark:</strong> A subtle, moving watermark with your username can be displayed on your videos for personalization. This can be toggled in the settings.
-                    </li>
-                     <li>
-                        <strong>Customizable User Settings:</strong> Personalize your experience by toggling Dark Mode, video looping, Cinema Mode, and the video watermark.
-                    </li>
+                    <li>{t('help.featureAuth')}</li>
+                    <li>{t('help.featureMediaManagement')}</li>
+                    <li>{t('help.featurePlayer')}</li>
+                    <li>{t('help.featureAI')}</li>
+                    <li>{t('help.featureShare')}</li>
+                    <li>{t('help.featureWatermark')}</li>
+                    <li>{t('help.featureSettings')}</li>
                 </ul>
             </Section>
             
-            <Section title="Technical Stack">
+            <Section title={t('help.stackTitle')}>
                 <ul className="list-disc list-inside space-y-2">
-                    <li><strong>Frontend Framework:</strong> React with TypeScript</li>
-                    <li><strong>Styling:</strong> Tailwind CSS</li>
-                    <li><strong>AI Integration:</strong> AI-Powered Analysis</li>
-                    <li><strong>Local Storage:</strong> IndexedDB (for video files) and LocalStorage (for user data/settings)</li>
+                    <li>{t('help.stackFrontend')}</li>
+                    <li>{t('help.stackStyling')}</li>
+                    <li>{t('help.stackAI')}</li>
+                    <li>{t('help.stackStorage')}</li>
                 </ul>
             </Section>
 
-            <Section title="Created By">
+            <Section title={t('help.createdByTitle')}>
                 <p>
-                    This application was personally created by Byiringiro Mackson.
+                    {t('help.createdByText', { creator: 'Eric tech' })}
                 </p>
             </Section>
 
-            <Section title="Support & Control">
+            <Section title={t('help.supportTitle')}>
                 <p>
-                    This application and all its features are controlled and managed by Byiringiro Mackson.
+                    {t('help.supportText1', { creator: 'Eric tech' })}
                 </p>
                 <p className="mt-2">
-                    For any support inquiries, issues, or questions, please contact us at our controlling email address: <a href="mailto:byiringiromackson2@gmail.com" className="text-cyan-500 hover:underline font-semibold">byiringiromackson2@gmail.com</a>.
+                    {t('help.supportText2', { email: '' })}
+                     <a href="mailto:byiringiromackson2@gmail.com" className="text-cyan-500 hover:underline font-semibold">byiringiromackson2@gmail.com</a>.
                 </p>
             </Section>
 
-            <Section title="Troubleshooting">
+            <Section title={t('help.troubleshootingTitle')}>
                 <p>
-                    If you encounter any issues, please try the following steps first:
+                    {t('help.troubleshootingIntro')}
                 </p>
                 <ul className="list-decimal list-inside space-y-2 pl-4">
-                    <li><strong>Video Upload Failed:</strong> Ensure you are using a standard video format (like MP4 or WebM) and that your browser has sufficient storage space.</li>
-                    <li><strong>AI Analysis Error:</strong> Check your internet connection. An API key for the AI service must be correctly configured in the application's environment for this feature to work.</li>
-                    <li><strong>General Problems:</strong> Try refreshing the page or clearing your browser's cache for this site.</li>
+                    <li>{t('help.troubleUpload')}</li>
+                    <li>{t('help.troubleAI')}</li>
+                    <li>{t('help.troubleGeneral')}</li>
                 </ul>
             </Section>
         </div>

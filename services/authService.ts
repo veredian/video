@@ -48,12 +48,12 @@ export const authService = {
       setTimeout(() => {
         const users = getUsers();
         if (users[email]) {
-          resolve({ success: false, message: 'User with this email already exists.' });
+          resolve({ success: false, message: 'auth.errorUserExists' });
           return;
         }
         users[email] = { email, password, media: [] };
         saveUsers(users);
-        resolve({ success: true, message: 'Signup successful. Please log in.' });
+        resolve({ success: true, message: 'auth.successSignup' });
       }, 500);
     });
   },
@@ -84,7 +84,7 @@ export const authService = {
           const { password, ...userWithoutPassword } = user;
           resolve({ success: true, message: 'Login successful!', user: userWithoutPassword });
         } else {
-          resolve({ success: false, message: 'Invalid email or password.' });
+          resolve({ success: false, message: 'auth.errorInvalidCredentials' });
         }
       }, 500);
     });
