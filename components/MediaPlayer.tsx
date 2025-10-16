@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { PlayIcon } from './icons/PlayIcon';
 import { PauseIcon } from './icons/PauseIcon';
@@ -274,7 +273,7 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
       case 'image':
         return (
             <div className="w-full h-full flex items-center justify-center p-4" onClick={(e) => e.stopPropagation()}>
-                <img ref={mediaRef} src={src} alt={fileName} className="max-w-full max-h-full object-contain rounded-md shadow-lg" onError={handleMediaError} />
+                <img ref={mediaRef} src={src} alt={fileName} className="max-w-full max-h-full object-contain rounded-md shadow-lg" onError={handleMediaError} onLoad={() => setIsWaiting(false)} />
             </div>
         );
       default:
@@ -297,7 +296,7 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
           </div>
         )}
         
-        {isWaiting && !loadError && mediaType !== 'image' && (
+        {isWaiting && !loadError && (
             <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/30">
                 <SpinnerIcon className="w-12 h-12 text-white/80 animate-spin" />
             </div>

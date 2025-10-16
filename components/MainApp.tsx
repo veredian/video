@@ -53,7 +53,6 @@ const MainApp: React.FC<MainAppProps> = ({ user, onLogout, settings, onSettingsC
     try {
         const updatedUser = await authService.deleteMediaForCurrentUser(mediaId);
         setMedia(updatedUser.media);
-        // If the deleted media was the one being viewed, go back to the gallery
         if(selectedMedia?.id === mediaId) {
             setSelectedMedia(null);
         }
@@ -62,6 +61,17 @@ const MainApp: React.FC<MainAppProps> = ({ user, onLogout, settings, onSettingsC
         alert("There was an error deleting the media. Please try again.");
     }
   }, [selectedMedia]);
+
+  const handleClearAllMedia = useCallback(async () => {
+    try {
+        const updatedUser = await authService.clearAllMediaForCurrentUser();
+        setMedia(updatedUser.media);
+        setSelectedMedia(null);
+    } catch (error) {
+        console.error("Failed to clear all media:", error);
+        alert("There was an error clearing your data. Please try again.");
+    }
+  }, []);
   
   const [mediaUrlForRender, setMediaUrlForRender] = useState<string | null>(null);
 
@@ -168,11 +178,10 @@ const MainApp: React.FC<MainAppProps> = ({ user, onLogout, settings, onSettingsC
                 <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
                   <div className="xl:col-span-2 w-full">
                     <MediaPlayer 
-                      key={selectedMedia.id} // Ensure component remounts on media change
+                      key={selectedMedia.id}
                       src={mediaUrlForRender} 
                       mediaType={selectedMedia.mediaType}
                       fileName={selectedMedia.name}
-                      // FIX: Pass the mimeType to the MediaPlayer component to resolve type errors.
                       mimeType={selectedMedia.type}
                       loop={settings.loopVideo} 
                       cinemaMode={settings.cinemaMode}
@@ -238,6 +247,7 @@ const MainApp: React.FC<MainAppProps> = ({ user, onLogout, settings, onSettingsC
         onClose={() => setIsSettingsOpen(false)}
         settings={settings}
         onSettingsChange={onSettingsChange}
+        onClearAllMedia={handleClearAllMedia}
       />
       <HelpModal 
         isOpen={isHelpOpen}

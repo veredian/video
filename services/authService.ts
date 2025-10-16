@@ -208,5 +208,29 @@ export const authService = {
             reject(new Error("Current user not found"));
         }
     });
+  },
+  
+  clearAllMediaForCurrentUser: (): Promise<User> => {
+    return new Promise(async (resolve, reject) => {
+        const userEmail = localStorage.getItem(CURRENT_USER_KEY);
+        if (!userEmail) return reject(new Error("No user logged in"));
+
+        const users = getUsers();
+        const user = users[userEmail];
+        if (user) {
+            try {
+                await mediaDBService.clearAllMedia();
+                user.media = [];
+                saveUsers(users);
+                const { password, ...userWithoutPassword } = user;
+                resolve(userWithoutPassword);
+            } catch (error) {
+                console.error("Failed to clear media:", error);
+                reject(new Error("Could not clear all media files."));
+            }
+        } else {
+            reject(new Error("Current user not found"));
+        }
+    });
   }
 };

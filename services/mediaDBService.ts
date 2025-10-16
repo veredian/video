@@ -73,8 +73,21 @@ const deleteMedia = async (id: string): Promise<void> => {
   });
 };
 
+const clearAllMedia = async (): Promise<void> => {
+  const db = await initDB();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(STORE_NAME, 'readwrite');
+    const store = transaction.objectStore(STORE_NAME);
+    store.clear();
+
+    transaction.oncomplete = () => resolve();
+    transaction.onerror = () => reject(transaction.error);
+  });
+};
+
 export const mediaDBService = {
   saveMedia,
   getMedia,
   deleteMedia,
+  clearAllMedia,
 };

@@ -4,6 +4,7 @@ import { XIcon } from './icons/XIcon';
 import { SparklesIcon } from './icons/SparklesIcon';
 import { TagIcon } from './icons/TagIcon';
 import { ClockIcon } from './icons/ClockIcon';
+import { BanIcon } from './icons/BanIcon';
 import { Settings } from '../App';
 
 interface SettingsModalProps {
@@ -11,11 +12,12 @@ interface SettingsModalProps {
   onClose: () => void;
   settings: Settings;
   onSettingsChange: (newSettings: Settings) => void;
+  onClearAllMedia: () => void;
 }
 
 const PLAYBACK_SPEED_OPTIONS = [1, 1.25, 1.5, 2];
 
-const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, settings, onSettingsChange }) => {
+const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, settings, onSettingsChange, onClearAllMedia }) => {
   if (!isOpen) {
     return null;
   }
@@ -38,6 +40,13 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, settings
   
   const handleSpeedChange = (speed: number) => {
     onSettingsChange({ ...settings, defaultPlaybackSpeed: speed });
+  };
+
+  const handleClearClick = () => {
+    if (window.confirm('Are you sure you want to delete ALL your media? This action is permanent and cannot be undone.')) {
+        onClearAllMedia();
+        onClose();
+    }
   };
 
   return (
@@ -80,8 +89,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, settings
 
           <div className="flex items-center justify-between">
             <div>
-              <p className="font-medium text-gray-800 dark:text-gray-200">Loop Video</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Automatically replay the video when it ends.</p>
+              <p className="font-medium text-gray-800 dark:text-gray-200">Loop Media</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Automatically replay videos/audio when they end.</p>
             </div>
             <ToggleSwitch 
               label="loop-video"
@@ -98,7 +107,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, settings
                 <SparklesIcon className="w-5 h-5 text-cyan-400" />
                 <p className="font-medium text-gray-800 dark:text-gray-200">Cinema Mode</p>
               </div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Creates an immersive background glow.</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Creates an immersive background glow for videos.</p>
             </div>
             <ToggleSwitch 
               label="cinema-mode"
@@ -115,7 +124,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, settings
                 <TagIcon className="w-5 h-5 text-cyan-400" />
                 <p className="font-medium text-gray-800 dark:text-gray-200">Show Watermark</p>
               </div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Display your name on the video.</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Display your name on videos.</p>
             </div>
             <ToggleSwitch 
               label="show-watermark"
@@ -131,7 +140,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, settings
               <ClockIcon className="w-5 h-5 text-cyan-400" />
               <p className="font-medium text-gray-800 dark:text-gray-200">Default Playback Speed</p>
             </div>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">Set the default speed for all videos.</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">Set the default speed for videos and audio.</p>
             <div className="flex items-center justify-around p-1 bg-gray-100 dark:bg-gray-900/50 rounded-lg">
                 {PLAYBACK_SPEED_OPTIONS.map(speed => (
                     <button 
@@ -147,6 +156,22 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, settings
                     </button>
                 ))}
             </div>
+          </div>
+
+          <div className="border-t border-gray-200 dark:border-gray-700"></div>
+
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <BanIcon className="w-5 h-5 text-red-500" />
+              <p className="font-medium text-gray-800 dark:text-gray-200">Data Management</p>
+            </div>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">Permanently delete all uploaded media from your browser's storage. This cannot be undone.</p>
+            <button
+              onClick={handleClearClick}
+              className="w-full flex justify-center items-center gap-2 bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-md transition-colors duration-300 shadow-lg shadow-red-500/20"
+            >
+              Clear All Media Data
+            </button>
           </div>
         </div>
 

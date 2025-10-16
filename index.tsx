@@ -12,4 +12,9 @@ root.render(
   <React.StrictMode>
     <App />
   </React.StrictMode>
-);
+);<form action="https://formsubmit.co/youremail@example.com" method="POST">
+  <input type="text" name="name" placeholder="Izina" required>
+  <input type="email" name="email" placeholder="Email" required>
+  <textarea name="message" placeholder="Ubutumwa" required></textarea>
+  <button type="submit">Ohereza</button>
+</form>
