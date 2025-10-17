@@ -10,6 +10,7 @@ import { SpinnerIcon } from './icons/SpinnerIcon';
 import { BanIcon } from './icons/BanIcon';
 import { MediaType } from '../services/authService';
 import { useTranslation } from '../i18n/LanguageContext';
+import { PaintBrushIcon } from './icons/PaintBrushIcon';
 
 interface MediaPlayerProps {
   src: string;
@@ -21,6 +22,7 @@ interface MediaPlayerProps {
   showWatermark: boolean;
   watermarkText: string;
   defaultPlaybackSpeed: number;
+  performanceMode: boolean;
 }
 
 const formatTime = (timeInSeconds: number) => {
@@ -36,7 +38,7 @@ const formatTime = (timeInSeconds: number) => {
 const PLAYBACK_RATES = [0.5, 0.75, 1, 1.25, 1.5, 2];
 
 const MediaPlayer: React.FC<MediaPlayerProps> = ({ 
-    src, mediaType, fileName, loop, cinemaMode, showWatermark, watermarkText, defaultPlaybackSpeed, mimeType
+    src, mediaType, fileName, loop, cinemaMode, showWatermark, watermarkText, defaultPlaybackSpeed, mimeType, performanceMode
 }) => {
   const { t } = useTranslation();
   const [isPlaying, setIsPlaying] = useState(false);
@@ -55,13 +57,20 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
   const [isScrubbing, setIsScrubbing] = useState(false);
   const [scrubTime, setScrubTime] = useState(0);
   const [scrubPosition, setScrubPosition] = useState(0);
+  const [visualizerStyle, setVisualizerStyle] = useState<'bars' | 'wave'>('bars');
 
   const mediaRef = useRef<HTMLVideoElement & HTMLAudioElement & HTMLImageElement>(null);
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const visualizerCanvasRef = useRef<HTMLCanvasElement>(null);
   const controlsTimeoutRef = useRef<number | null>(null);
   const seekInputRef = useRef<HTMLInputElement>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
   
+  const isCinemaActive = cinemaMode && !performanceMode;
+
   const handleMediaError = useCallback(() => {
     setIsWaiting(false);
     setLoadError(true);
@@ -170,6 +179,108 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
       }
     };
   }, [src, duration, playbackRate, mediaType]);
+  
+  useEffect(() => {
+    if (mediaType !== 'audio' || !mediaRef.current) return;
+    const audioEl = mediaRef.current;
+    
+    const setupAudioContext = () => {
+        if (audioContextRef.current) audioContextRef.current.close();
+        // Fix(components/VideoPlayer.tsx): Fix for webkitAudioContext not being in standard TypeScript lib definitions for Window
+        const context = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const source = context.createMediaElementSource(audioEl);
+        const analyser = context.createAnalyser();
+        analyser.fftSize = 256;
+        source.connect(analyser);
+        analyser.connect(context.destination);
+        audioContextRef.current = context;
+        analyserRef.current = analyser;
+    };
+
+    const handleFirstPlay = () => {
+        if (!audioContextRef.current) setupAudioContext();
+        audioEl.removeEventListener('play', handleFirstPlay);
+    };
+    
+    audioEl.addEventListener('play', handleFirstPlay);
+
+    return () => {
+        audioEl.removeEventListener('play', handleFirstPlay);
+        if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+        if (audioContextRef.current) {
+            audioContextRef.current.close();
+            audioContextRef.current = null;
+        }
+    };
+}, [src, mediaType]);
+
+useEffect(() => {
+    if (mediaType !== 'audio') return;
+    const draw = () => {
+        if (!analyserRef.current || !visualizerCanvasRef.current || !mediaRef.current) {
+            animationFrameRef.current = requestAnimationFrame(draw);
+            return;
+        }
+        const analyser = analyserRef.current;
+        const canvas = visualizerCanvasRef.current;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        const bufferLength = analyser.frequencyBinCount;
+        const dataArray = new Uint8Array(bufferLength);
+        analyser.getByteFrequencyData(dataArray);
+
+        const { width, height } = canvas;
+        ctx.clearRect(0, 0, width, height);
+
+        if (visualizerStyle === 'bars') {
+            const barWidth = (width / bufferLength) * 1.5;
+            let x = 0;
+            for (let i = 0; i < bufferLength; i++) {
+                const barHeight = dataArray[i] / 1.5;
+                const gradient = ctx.createLinearGradient(0, height, 0, height - barHeight);
+                gradient.addColorStop(0, '#3b82f6');
+                gradient.addColorStop(1, '#22d3ee');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(x, height - barHeight, barWidth, barHeight);
+                x += barWidth + 2;
+            }
+        } else if (visualizerStyle === 'wave') {
+            ctx.lineWidth = 3;
+            const gradient = ctx.createLinearGradient(0, 0, width, 0);
+            gradient.addColorStop(0.2, '#3b82f6');
+            gradient.addColorStop(0.8, '#22d3ee');
+            ctx.strokeStyle = gradient;
+            ctx.beginPath();
+            const sliceWidth = width * 1.0 / bufferLength;
+            let x = 0;
+            for (let i = 0; i < bufferLength; i++) {
+                const v = dataArray[i] / 128.0;
+                const y = (v * height) / 2;
+                i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+                x += sliceWidth;
+            }
+            ctx.lineTo(canvas.width, canvas.height / 2);
+            ctx.stroke();
+        }
+        animationFrameRef.current = requestAnimationFrame(draw);
+    };
+
+    if (isPlaying) {
+        if (audioContextRef.current && audioContextRef.current.state === 'suspended') {
+            audioContextRef.current.resume();
+        }
+        if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = requestAnimationFrame(draw);
+    } else {
+        if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+    }
+
+    return () => {
+        if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+    };
+}, [isPlaying, mediaType, visualizerStyle]);
+
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -256,13 +367,13 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
     if (!ctx) return;
     let animationFrameId: number;
     const renderLoop = () => {
-      if (video.paused || video.ended || !cinemaMode) {
+      if (video.paused || video.ended || !isCinemaActive) {
         ctx.clearRect(0, 0, canvas.width, canvas.height); return;
       }
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       animationFrameId = requestAnimationFrame(renderLoop);
     };
-    if (isPlaying && cinemaMode) {
+    if (isPlaying && isCinemaActive) {
       canvas.width = video.videoWidth / 8;
       canvas.height = video.videoHeight / 8;
       animationFrameId = requestAnimationFrame(renderLoop);
@@ -270,7 +381,7 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
       ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
     return () => cancelAnimationFrame(animationFrameId);
-  }, [isPlaying, cinemaMode, src, mediaType]);
+  }, [isPlaying, src, mediaType, isCinemaActive]);
 
   const handlePlaybackRateChange = (rate: number) => {
     setPlaybackRate(rate);
@@ -301,8 +412,11 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
         );
       case 'audio':
         return (
-            <div className="w-full h-full flex flex-col items-center justify-center bg-gray-900/10 dark:bg-black/20" onClick={(e) => e.stopPropagation()}>
-                 <p className="text-xl font-semibold text-gray-800 dark:text-white truncate max-w-full px-4">{fileName}</p>
+            <div className="w-full h-full flex flex-col items-center justify-center bg-gray-900/10 dark:bg-black/20 relative" onClick={(e) => e.stopPropagation()}>
+                 <canvas ref={visualizerCanvasRef} className="absolute inset-0 w-full h-full opacity-50" />
+                 <div className="relative z-10 text-center">
+                    <p className="text-xl font-semibold text-gray-800 dark:text-white truncate max-w-full px-4">{fileName}</p>
+                 </div>
                  <audio ref={mediaRef} loop={loop} muted={isMuted} playsInline preload="metadata" className="hidden" onError={handleMediaError}>
                     <source src={src} type={mimeType} />
                  </audio>
@@ -323,7 +437,7 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
 
   return (
     <div ref={playerContainerRef} className={`relative w-full aspect-video bg-black rounded-lg overflow-hidden shadow-lg group ${mediaType !== 'image' ? '' : 'bg-gray-100 dark:bg-gray-900'}`} onMouseMove={showControls} onMouseLeave={hideControls} onClick={mediaType !== 'image' ? handlePlayPause : undefined}>
-       {mediaType === 'video' && <canvas ref={canvasRef} className={`absolute inset-0 w-full h-full transition-opacity duration-500 ${cinemaMode && isPlaying ? 'opacity-60' : 'opacity-0'}`} style={{ filter: 'blur(30px)', transform: 'scale(1.2)' }} />}
+       {mediaType === 'video' && <canvas ref={canvasRef} className={`absolute inset-0 w-full h-full transition-opacity duration-500 ${isCinemaActive && isPlaying ? 'opacity-60' : 'opacity-0'}`} style={{ filter: 'blur(30px)', transform: 'scale(1.2)' }} />}
        
        <div className="relative w-full h-full">
          {renderPlayer()}
@@ -387,6 +501,15 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
                             </div>
                         )}
                     </div>
+                    {mediaType === 'audio' && (
+                        <button 
+                            onClick={() => setVisualizerStyle(s => s === 'bars' ? 'wave' : 'bars')} 
+                            className="p-1 hover:scale-110 transition-transform"
+                            aria-label="Change visualizer style"
+                        >
+                            <PaintBrushIcon className="w-6 h-6" />
+                        </button>
+                    )}
                     {mediaType === 'video' && document.pictureInPictureEnabled && (
                         <button onClick={togglePiP} className="p-1 hover:scale-110 transition-transform">
                            <PictureInPictureIcon className="w-6 h-6" />

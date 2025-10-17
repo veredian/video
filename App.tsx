@@ -10,6 +10,7 @@ export interface Settings {
   cinemaMode: boolean;
   showWatermark: boolean;
   defaultPlaybackSpeed: number;
+  performanceMode: boolean;
 }
 
 const THEMES: Settings['theme'][] = ['light', 'dark', 'sunset', 'ocean', 'space'];
@@ -36,6 +37,7 @@ const App: React.FC = () => {
           cinemaMode: parsed.cinemaMode !== undefined ? parsed.cinemaMode : true,
           showWatermark: parsed.showWatermark !== undefined ? parsed.showWatermark : true,
           defaultPlaybackSpeed: parsed.defaultPlaybackSpeed || 1,
+          performanceMode: parsed.performanceMode !== undefined ? parsed.performanceMode : false,
         };
       }
     } catch (error) {
@@ -47,6 +49,7 @@ const App: React.FC = () => {
       cinemaMode: true,
       showWatermark: true,
       defaultPlaybackSpeed: 1,
+      performanceMode: false,
     };
   });
 

@@ -182,7 +182,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
                     <button
                         type="submit"
                         disabled={isLoading}
-                        className="w-full flex justify-center items-center bg-gradient-to-r from-cyan-400 to-blue-500 hover:from-cyan-500 hover:to-blue-600 text-white font-bold py-2 px-4 rounded-md transition-all duration-300 transform hover:scale-105 shadow-lg shadow-cyan-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full flex justify-center items-center bg-cyan-500 hover:bg-cyan-600 text-black font-bold py-2 px-4 rounded-md transition-all duration-300 transform hover:scale-105 shadow-lg shadow-cyan-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         {isLoading && <SpinnerIcon className="w-5 h-5 mr-2 animate-spin" />}
                         {mode === 'login' ? t('auth.logIn') : t('auth.createAccount')}

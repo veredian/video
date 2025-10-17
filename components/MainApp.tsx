@@ -166,6 +166,7 @@ const MainApp: React.FC<MainAppProps> = ({ user, onLogout, settings, onSettingsC
                     showWatermark={settings.showWatermark}
                     watermarkText={watermarkText}
                     defaultPlaybackSpeed={settings.defaultPlaybackSpeed}
+                    performanceMode={settings.performanceMode}
                 />
                 </div>
                 <div className="flex flex-col gap-4">
@@ -197,7 +198,13 @@ const MainApp: React.FC<MainAppProps> = ({ user, onLogout, settings, onSettingsC
         );
     }
     if (media.length > 0 && !isUploading) {
-        return <MediaGallery media={media} onSelectMedia={handleSelectMedia} onUploadClick={() => setIsUploading(true)} onDeleteMedia={handleDeleteMedia} />;
+        return <MediaGallery 
+            media={media} 
+            onSelectMedia={handleSelectMedia} 
+            onUploadClick={() => setIsUploading(true)} 
+            onDeleteMedia={handleDeleteMedia}
+            performanceMode={settings.performanceMode}
+        />;
     }
     return <MediaUploader onMediaUpload={handleMediaUpload} />;
   };

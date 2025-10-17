@@ -110,7 +110,7 @@ const VerificationModal: React.FC<VerificationModalProps> = ({ isOpen, onClose, 
             
             <button
                 onClick={handleVerify}
-                className="w-full flex justify-center items-center bg-gradient-to-r from-cyan-400 to-blue-500 hover:from-cyan-500 hover:to-blue-600 text-white font-bold py-2 px-4 rounded-md transition-all duration-300 transform hover:scale-105 shadow-lg shadow-cyan-500/20"
+                className="w-full flex justify-center items-center bg-cyan-500 hover:bg-cyan-600 text-black font-bold py-2 px-4 rounded-md transition-all duration-300 transform hover:scale-105 shadow-lg shadow-cyan-500/20"
             >
                 {t('verification.verifyButton')}
             </button>

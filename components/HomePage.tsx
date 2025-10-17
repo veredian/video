@@ -34,7 +34,7 @@ const HomePage: React.FC<HomePageProps> = ({ onEnter }) => {
             </p>
             <button
                 onClick={onEnter}
-                className="bg-gradient-to-r from-cyan-400 to-blue-500 hover:from-cyan-500 hover:to-blue-600 text-white font-bold py-4 px-10 rounded-full text-lg transition-all duration-300 transform hover:scale-110 shadow-xl shadow-cyan-500/30 opacity-0 animate-fade-in-up"
+                className="bg-cyan-500 hover:bg-cyan-600 text-black font-bold py-4 px-10 rounded-full text-lg transition-all duration-300 transform hover:scale-110 shadow-xl shadow-cyan-500/30 opacity-0 animate-fade-in-up"
                 style={{ animationDelay: '700ms' }}
             >
                 {t('home.getStarted')}

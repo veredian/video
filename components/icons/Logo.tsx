@@ -2,7 +2,7 @@ import React from 'react';
 
 export const Logo: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
   <svg
-    viewBox="0 0 258 155"
+    viewBox="0 0 258 200"
     xmlns="http://www.w3.org/2000/svg"
     {...props}
   >
@@ -13,12 +13,26 @@ export const Logo: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
       </linearGradient>
     </defs>
     <path
-      d="M194.55 71.363c-6.15-31.25-34.93-54.68-68.52-54.68-29.35 0-54.81 18.04-65.57 43.85-4.52-1.63-9.4-2.58-14.51-2.58-25.21 0-45.64 20.43-45.64 45.64s20.43 45.64 45.64 45.64h148.1c31.13 0 56.36-25.23 56.36-56.36 0-30-23.5-54.4-52.56-56.19l-1.36-.02z"
+      className="logo-path-fill"
+      d="M40 135 L129 20 L218 135 L178 135 L129 65 L80 135 Z"
+      fillRule="evenodd"
+    />
+     <path
+      className="logo-path-draw"
+      d="M40 135 L129 20 L218 135 L178 135 L129 65 L80 135 Z"
+      fillRule="evenodd"
+    />
+    <text
+      x="129"
+      y="180"
+      fontFamily="Inter, sans-serif"
+      fontSize="40"
+      fontWeight="bold"
       fill="url(#logo-gradient)"
-    />
-    <path
-      d="M109.11 81.333l42.48 24.52-42.48 24.52v-49.04z"
-      fill="#fff"
-    />
+      textAnchor="middle"
+      className="logo-text"
+    >
+      NV .NE
+    </text>
   </svg>
 );

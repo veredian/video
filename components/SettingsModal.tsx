@@ -5,6 +5,7 @@ import { SparklesIcon } from './icons/SparklesIcon';
 import { TagIcon } from './icons/TagIcon';
 import { ClockIcon } from './icons/ClockIcon';
 import { BanIcon } from './icons/BanIcon';
+import { ZapIcon } from './icons/ZapIcon';
 import { Settings } from '../App';
 import { useTranslation } from '../i18n/LanguageContext';
 
@@ -35,6 +36,15 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, settings
   
   const handleCinemaModeChange = (enabled: boolean) => {
     onSettingsChange({ ...settings, cinemaMode: enabled });
+  };
+  
+  const handlePerformanceModeChange = (enabled: boolean) => {
+    const newSettings = { ...settings, performanceMode: enabled };
+    // If performance mode is turned on, also turn off cinema mode
+    if (enabled) {
+      newSettings.cinemaMode = false;
+    }
+    onSettingsChange(newSettings);
   };
 
   const handleWatermarkChange = (enabled: boolean) => {
@@ -89,6 +99,23 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, settings
           </div>
 
           <div className="border-t border-gray-200 dark:border-gray-700"></div>
+          
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-2">
+                <ZapIcon className="w-5 h-5 text-cyan-400" />
+                <p className="font-medium text-gray-800 dark:text-gray-200">{t('settings.performanceMode')}</p>
+              </div>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{t('settings.performanceModeDesc')}</p>
+            </div>
+            <ToggleSwitch 
+              label="performance-mode"
+              enabled={settings.performanceMode} 
+              onChange={handlePerformanceModeChange} 
+            />
+          </div>
+
+          <div className="border-t border-gray-200 dark:border-gray-700"></div>
 
           <div className="flex items-center justify-between">
             <div>
@@ -104,7 +131,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, settings
 
           <div className="border-t border-gray-200 dark:border-gray-700"></div>
 
-          <div className="flex items-center justify-between">
+          <div className={`flex items-center justify-between transition-opacity ${settings.performanceMode ? 'opacity-50' : ''}`}>
             <div>
               <div className="flex items-center gap-2">
                 <SparklesIcon className="w-5 h-5 text-cyan-400" />
@@ -116,6 +143,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, settings
               label="cinema-mode"
               enabled={settings.cinemaMode} 
               onChange={handleCinemaModeChange} 
+              disabled={settings.performanceMode}
             />
           </div>
 
