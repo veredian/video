@@ -1,127 +1,140 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NV & NE ltd | Upload & Share</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      tailwind.config = {
-        darkMode: 'class',
-        theme: {
-          extend: {},
-        },
+    <meta name="description" content="An easy-to-use tool to upload your videos and generate shareable links or embed codes for your websites. Simply drag and drop your video to get started.">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>☁️</text></svg>">
+    
+    <script type="importmap">
+    {
+      "imports": {
+        "@google/genai": "https://aistudiocdn.com/@google/genai@^1.25.0",
+        "react/": "https://aistudiocdn.com/react@^19.2.0/",
+        "react": "https://aistudiocdn.com/react@^19.2.0",
+        "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/"
       }
+    }
     </script>
+    
     <style>
-      body {
-        transition: background-color 0.5s ease, background-image 0.5s ease;
-      }
-      .theme-sunset {
-        background-image: linear-gradient(to top right, #330867 0%, #30cfd0 100%);
-      }
-      .theme-ocean {
-        background-image: linear-gradient(120deg, #1cb5e0 0%, #000046 100%);
-      }
-      .theme-space {
-        background-color: #000000;
-        background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><g fill="%23FFFFFF1A" fill-opacity="0.4"><circle cx="50" cy="50" r="1"/><circle cx="10" cy="10" r="1"/><circle cx="90" cy="90" r="1"/><circle cx="10" cy="90"r="1"/><circle cx="90" cy="10" r="1"/><circle cx="30" cy="70" r="1"/><circle cx="70" cy="30" r="1"/></g></svg>');
-      }
-      .watermark {
-        position: absolute;
-        bottom: 10%;
-        left: 0;
-        width: 100%;
-        overflow: hidden;
-        pointer-events: none;
-        white-space: nowrap;
-        color: rgba(255, 255, 255, 0.4);
-        font-size: 1.25rem;
-        font-weight: 600;
-        text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.6);
-        z-index: 25;
-      }
-      .watermark-text {
-        display: inline-block;
-        padding-left: 100%;
-        animation: marquee 20s linear infinite;
-      }
-      @keyframes marquee {
-        0% { transform: translateX(0); }
-        100% { transform: translateX(-200%); }
-      }
-      
-      /* --- Custom Video Player Styles --- */
-      .video-range {
-        -webkit-appearance: none;
-        appearance: none;
-        background: transparent;
-        cursor: pointer;
-        width: 100%;
-      }
-      .video-range:focus {
-        outline: none;
-      }
-      
-      /* Chrome, Safari, Opera, Edge */
-      .video-range::-webkit-slider-runnable-track {
-        background: linear-gradient(to right, #22d3ee var(--progress, 0%), rgba(255, 255, 255, 0.3) var(--progress, 0%));
-        height: 0.35rem;
-        border-radius: 0.5rem;
-      }
-      .video-range::-webkit-slider-thumb {
-        -webkit-appearance: none;
-        appearance: none;
-        margin-top: -6px; /* (thumb height - track height) / 2 */
-        background-color: #fff;
-        height: 1rem;
-        width: 1rem;
-        border-radius: 50%;
-        border: 2px solid #22d3ee;
-        transition: transform 0.2s ease;
-      }
-      .video-range:hover::-webkit-slider-thumb {
-        transform: scale(1.1);
-      }
-      
-      /* Firefox */
-      .video-range::-moz-range-track {
-        background-color: rgba(255, 255, 255, 0.3);
-        height: 0.35rem;
-        border-radius: 0.5rem;
-      }
-      .video-range::-moz-range-progress {
-        background-color: #22d3ee;
-        height: 0.35rem;
-        border-radius: 0.5rem;
-      }
-      .video-range::-moz-range-thumb {
-        background-color: #fff;
-        height: 0.8rem;
-        width: 0.8rem;
-        border-radius: 50%;
-        border: 2px solid #22d3ee;
-        transition: transform 0.2s ease;
-      }
-       .video-range:hover::-moz-range-thumb {
-        transform: scale(1.1);
-      }
+        /* Custom font and base styles */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
 
+        /* Custom Themes */
+        .theme-sunset { background: linear-gradient(135deg, #FFD3B6, #FFAAA5); }
+        .theme-ocean { background: linear-gradient(135deg, #A8D0E6, #374785); }
+        .theme-space { background: linear-gradient(135deg, #1B262C, #0F4C75, #3282B8); }
+
+        /* Custom scrollbar for better aesthetics */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        .dark ::-webkit-scrollbar-track { background: #2d3748; }
+        ::-webkit-scrollbar-thumb { background: #888; border-radius: 4px; }
+        .dark ::-webkit-scrollbar-thumb { background: #555; }
+        ::-webkit-scrollbar-thumb:hover { background: #555; }
+        .dark ::-webkit-scrollbar-thumb:hover { background: #333; }
+
+        /* Custom styles for video player range inputs */
+        .video-range {
+            -webkit-appearance: none;
+            appearance: none;
+            background: transparent;
+            cursor: pointer;
+            height: 1rem;
+        }
+        .video-range::-webkit-slider-runnable-track {
+            background-color: rgba(255, 255, 255, 0.3);
+            border-radius: 0.5rem;
+            height: 0.35rem;
+        }
+        .video-range::-moz-range-track {
+            background-color: rgba(255, 255, 255, 0.3);
+            border-radius: 0.5rem;
+            height: 0.35rem;
+        }
+        .video-range {
+            background: linear-gradient(to right, #22d3ee var(--progress, 0%), transparent var(--progress, 0%));
+            border-radius: 0.5rem;
+        }
+        .video-range::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            margin-top: -5px;
+            background-color: #fff;
+            border-radius: 50%;
+            height: 1rem;
+            width: 1rem;
+            transition: transform 0.2s ease-in-out;
+        }
+        .video-range:hover::-webkit-slider-thumb {
+            transform: scale(1.1);
+        }
+        .video-range::-moz-range-thumb {
+            border: none;
+            border-radius: 50%;
+            background-color: #fff;
+            height: 1rem;
+            width: 1rem;
+            transition: transform 0.2s ease-in-out;
+        }
+        .video-range:hover::-moz-range-thumb {
+            transform: scale(1.1);
+        }
+
+        /* Watermark styles */
+        .watermark {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 25;
+        }
+        .watermark-text {
+            position: absolute;
+            color: rgba(255, 255, 255, 0.2);
+            font-size: 1.5vw;
+            font-weight: bold;
+            text-transform: uppercase;
+            white-space: nowrap;
+            animation: move-watermark 20s linear infinite;
+        }
+        @keyframes move-watermark {
+            0% { transform: translate(10%, 20%); }
+            25% { transform: translate(60%, 80%); }
+            50% { transform: translate(10%, 60%); }
+            75% { transform: translate(70%, 10%); }
+            100% { transform: translate(10%, 20%); }
+        }
+
+        /* Fade-in animation */
+        .animate-fade-in-up {
+            animation: fade-in-up 0.8s ease-out forwards;
+        }
+        @keyframes fade-in-up {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
     </style>
-  <script type="importmap">
-{
-  "imports": {
-    "react": "https://aistudiocdn.com/react@^19.2.0",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-    "react/": "https://aistudiocdn.com/react@^19.2.0/",
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.24.0"
-  }
-}
-</script>
 </head>
-  <body>
+<body class="bg-gray-100 dark:bg-gray-900">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
-  </body>
+</body>
 </html>

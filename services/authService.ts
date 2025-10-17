@@ -1,7 +1,7 @@
 // A mock auth service to simulate a backend using localStorage.
 // In a real app, this would make API calls to a secure server.
 // WARNING: Passwords are stored in plaintext. This is NOT secure and is for demonstration purposes only.
-import { mediaDBService } from './mediaDBService';
+import { mediaDBService } from './videoDBService';
 
 export interface User {
   email: string;

@@ -17,30 +17,31 @@ const HomePage: React.FC<HomePageProps> = ({ onEnter }) => {
       </div>
       <div className="w-full max-w-2xl">
         <header className="mb-8">
-            <div className="flex flex-col items-center justify-center gap-4 mb-6">
+            <div className="flex flex-col items-center justify-center gap-4 mb-6 opacity-0 animate-fade-in-up" style={{ animationDelay: '100ms' }}>
                 <Logo className="w-32 h-auto" />
                 <h1 className="text-5xl sm:text-7xl font-bold tracking-tight bg-gradient-to-r from-cyan-500 to-blue-500 text-transparent bg-clip-text">
                     {t('home.title')}
                 </h1>
             </div>
-            <p className="text-xl sm:text-2xl text-gray-600 dark:text-gray-400 max-w-xl mx-auto">
+            <p className="text-xl sm:text-2xl text-gray-600 dark:text-gray-400 max-w-xl mx-auto opacity-0 animate-fade-in-up" style={{ animationDelay: '300ms' }}>
                 {t('home.subtitle')}
             </p>
         </header>
 
         <main className="flex flex-col items-center">
-            <p className="text-md text-gray-500 dark:text-gray-400 mb-8">
+            <p className="text-md text-gray-500 dark:text-gray-400 mb-8 opacity-0 animate-fade-in-up" style={{ animationDelay: '500ms' }}>
               {t('home.description')}
             </p>
             <button
                 onClick={onEnter}
-                className="bg-gradient-to-r from-cyan-400 to-blue-500 hover:from-cyan-500 hover:to-blue-600 text-white font-bold py-4 px-10 rounded-full text-lg transition-all duration-300 transform hover:scale-110 shadow-xl shadow-cyan-500/30"
+                className="bg-gradient-to-r from-cyan-400 to-blue-500 hover:from-cyan-500 hover:to-blue-600 text-white font-bold py-4 px-10 rounded-full text-lg transition-all duration-300 transform hover:scale-110 shadow-xl shadow-cyan-500/30 opacity-0 animate-fade-in-up"
+                style={{ animationDelay: '700ms' }}
             >
                 {t('home.getStarted')}
             </button>
         </main>
 
-        <footer className="text-center mt-16 text-gray-500 dark:text-gray-400 text-sm">
+        <footer className="text-center mt-16 text-gray-500 dark:text-gray-400 text-sm opacity-0 animate-fade-in-up" style={{ animationDelay: '900ms' }}>
           <p>{t('home.madeBy', { creator: 'Eric tech' })}</p>
         </footer>
       </div>

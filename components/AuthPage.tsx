@@ -91,18 +91,18 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
         </div>
         <div className="w-full max-w-md">
             <header className="text-center mb-8">
-                <div className="flex items-center justify-center gap-3 mb-4">
+                <div className="flex items-center justify-center gap-3 mb-4 opacity-0 animate-fade-in-up" style={{ animationDelay: '100ms' }}>
                     <Logo className="w-16 h-auto" />
                     <h1 className="text-4xl sm:text-5xl font-bold tracking-tight bg-gradient-to-r from-cyan-500 to-blue-500 text-transparent bg-clip-text">
                         NV & NE ltd
                     </h1>
                 </div>
-                <p className="text-lg text-gray-600 dark:text-gray-400">
+                <p className="text-lg text-gray-600 dark:text-gray-400 opacity-0 animate-fade-in-up" style={{ animationDelay: '300ms' }}>
                     {t('auth.greeting')}
                 </p>
             </header>
             
-            <main className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm rounded-2xl shadow-2xl shadow-cyan-500/10 p-8 border border-gray-300 dark:border-gray-700">
+            <main className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm rounded-2xl shadow-2xl shadow-cyan-500/10 p-8 border border-gray-300 dark:border-gray-700 opacity-0 animate-fade-in-up" style={{ animationDelay: '500ms' }}>
                 <div className="flex border-b border-gray-300 dark:border-gray-600 mb-6">
                     <button onClick={() => switchMode('login')} className={`flex-1 py-2 text-center font-semibold transition-colors duration-200 ${mode === 'login' ? 'text-cyan-500 border-b-2 border-cyan-500' : 'text-gray-500 hover:text-cyan-400'}`}>
                         {t('auth.login')}

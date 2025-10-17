@@ -1,6 +1,6 @@
 const DB_NAME = 'NVNELtdDB';
 const DB_VERSION = 1;
-const STORE_NAME = 'videos';
+const STORE_NAME = 'media';
 
 let db: IDBDatabase;
 
@@ -31,7 +31,7 @@ const initDB = (): Promise<IDBDatabase> => {
   });
 };
 
-const saveVideo = async (id: string, blob: Blob): Promise<void> => {
+const saveMedia = async (id: string, blob: Blob): Promise<void> => {
   const db = await initDB();
   return new Promise((resolve, reject) => {
     const transaction = db.transaction(STORE_NAME, 'readwrite');
@@ -43,7 +43,7 @@ const saveVideo = async (id: string, blob: Blob): Promise<void> => {
   });
 };
 
-const getVideo = async (id: string): Promise<Blob | null> => {
+const getMedia = async (id: string): Promise<Blob | null> => {
   const db = await initDB();
   return new Promise((resolve, reject) => {
     const transaction = db.transaction(STORE_NAME, 'readonly');
@@ -61,7 +61,7 @@ const getVideo = async (id: string): Promise<Blob | null> => {
   });
 };
 
-const deleteVideo = async (id: string): Promise<void> => {
+const deleteMedia = async (id: string): Promise<void> => {
   const db = await initDB();
   return new Promise((resolve, reject) => {
     const transaction = db.transaction(STORE_NAME, 'readwrite');
@@ -73,8 +73,21 @@ const deleteVideo = async (id: string): Promise<void> => {
   });
 };
 
-export const videoDBService = {
-  saveVideo,
-  getVideo,
-  deleteVideo,
+const clearAllMedia = async (): Promise<void> => {
+  const db = await initDB();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(STORE_NAME, 'readwrite');
+    const store = transaction.objectStore(STORE_NAME);
+    store.clear();
+
+    transaction.oncomplete = () => resolve();
+    transaction.onerror = () => reject(transaction.error);
+  });
+};
+
+export const mediaDBService = {
+  saveMedia,
+  getMedia,
+  deleteMedia,
+  clearAllMedia,
 };

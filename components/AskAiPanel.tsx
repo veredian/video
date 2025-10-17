@@ -59,9 +59,11 @@ const AskAiPanel: React.FC<AskAiPanelProps> = ({ media }) => {
 
       let prompt = '';
       if (media.mediaType === 'video') {
-        prompt = `Analyze the content of the provided video titled "${media.name}". Please provide a brief summary and a list of key talking points or main events in bullet points.`;
+        prompt = `Identify the main theme or a potential narrative arc of the video titled "${media.name}". Then, list 3-5 key visual elements or scenes that support this theme.`;
       } else if (media.mediaType === 'image') {
         prompt = `Analyze the provided image titled "${media.name}". Describe the key objects, colors, composition, and overall mood of the image.`;
+      } else if (media.mediaType === 'audio') {
+        prompt = `Analyze the provided audio file titled "${media.name}". Describe its content: is it speech, music, or something else? If it's speech, provide a brief transcript. If it's music, describe the genre, instruments, and mood.`;
       }
 
       if (question.trim()) {
@@ -85,18 +87,6 @@ const AskAiPanel: React.FC<AskAiPanelProps> = ({ media }) => {
       setIsLoading(false);
     }
   };
-
-  if (media.mediaType === 'audio') {
-    return (
-        <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-lg border border-gray-300 dark:border-gray-700 h-full flex flex-col items-center justify-center text-center">
-            <BanIcon className="w-12 h-12 text-gray-400 dark:text-gray-500 mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{t('aiPanel.notSupportedTitle')}</h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                {t('aiPanel.notSupportedDescription')}
-            </p>
-        </div>
-    );
-  }
 
   return (
     <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-lg border border-gray-300 dark:border-gray-700 h-full flex flex-col">
@@ -129,7 +119,7 @@ const AskAiPanel: React.FC<AskAiPanelProps> = ({ media }) => {
              </>
           )}
         </button>
-        <div className="mt-4 flex-grow overflow-y-auto max-h-48 pr-2">
+        <div className="mt-4 flex-grow overflow-y-auto max-h-64 pr-2">
             {response && (
                  <div className="text-sm p-3 bg-gray-100 dark:bg-gray-900/50 rounded-lg whitespace-pre-wrap">
                     <p className="font-semibold text-gray-800 dark:text-gray-200 mb-1">{t('aiPanel.answer')}</p>
