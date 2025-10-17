@@ -66,7 +66,8 @@
     "emptyTitle": "Isomero ryawe ririmo ubusa",
     "emptyDescription": "Kanda buto hano hepfo kugirango utangire kandi wongeremo dosiye yawe ya mbere.",
     "noResultsTitle": "Nta Dosiye Yabonetse",
-    "noResultsDescription": "Ishakisha ryawe n'ibyo wahisemo ntibihuye n'amadosiye ariho."
+    "noResultsDescription": "Ishakisha ryawe n'ibyo wahisemo ntibihuye n'amadosiye ariho.",
+    "clearFilters": "Siba Ibyatoranijwe"
   },
   "player": {
     "errorTitle": "Ntibishoboye gufungura dosiye.",

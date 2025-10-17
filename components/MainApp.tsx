@@ -13,6 +13,7 @@ import { TrashIcon } from './icons/TrashIcon';
 import { DownloadIcon } from './icons/DownloadIcon';
 import { QuestionMarkIcon } from './icons/QuestionMarkIcon';
 import { PaintBrushIcon } from './icons/PaintBrushIcon';
+import { ArrowLeftIcon } from './icons/ArrowLeftIcon';
 import { User, authService, MediaData } from '../services/authService';
 import { mediaDBService } from '../services/mediaDBService';
 import { Settings } from '../App';
@@ -140,6 +141,18 @@ const MainApp: React.FC<MainAppProps> = ({ user, onLogout, settings, onSettingsC
     if (selectedMedia && mediaUrlForRender) {
         return (
             <div>
+            <div className="flex items-center gap-4 mb-6">
+                <button
+                    onClick={handleBackToGallery}
+                    className="p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition-colors"
+                    aria-label="Back to gallery"
+                >
+                    <ArrowLeftIcon className="w-6 h-6" />
+                </button>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white truncate" title={selectedMedia.name}>
+                    {selectedMedia.name}
+                </h2>
+            </div>
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
                 <div className="xl:col-span-2 w-full">
                 <MediaPlayer 
@@ -161,12 +174,6 @@ const MainApp: React.FC<MainAppProps> = ({ user, onLogout, settings, onSettingsC
                 </div>
             </div>
             <div className="flex flex-wrap justify-center items-center gap-4 mt-8">
-                <button
-                onClick={handleBackToGallery}
-                className="bg-cyan-500 hover:bg-cyan-600 text-white font-semibold py-2 px-6 rounded-lg transition-colors duration-300 shadow-lg shadow-cyan-500/20"
-                >
-                {t('main.backToGallery')}
-                </button>
                 <button
                 onClick={handleDownloadMedia}
                 className="flex items-center gap-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300 shadow-lg shadow-gray-500/20"

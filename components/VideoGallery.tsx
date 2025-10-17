@@ -1,17 +1,14 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { MediaData, MediaType } from '../services/authService';
-import { FilmIcon } from './icons/FilmIcon';
+import MediaThumbnail from './MediaThumbnail';
 import { PlusIcon } from './icons/PlusIcon';
-import { TrashIcon } from './icons/TrashIcon';
 import { SearchIcon } from './icons/SearchIcon';
 import { SortAscIcon } from './icons/SortAscIcon';
 import { SortDescIcon } from './icons/SortDescIcon';
-import { MusicIcon } from './icons/MusicIcon';
-import { ImageIcon } from './icons/ImageIcon';
 import { FilterIcon } from './icons/FilterIcon';
+import { XIcon } from './icons/XIcon';
 import { useTranslation } from '../i18n/LanguageContext';
-import { mediaDBService } from '../services/mediaDBService';
-import { SpinnerIcon } from './icons/SpinnerIcon';
+import { ImageIcon } from './icons/ImageIcon';
 
 interface MediaGalleryProps {
   media: MediaData[];
@@ -22,132 +19,6 @@ interface MediaGalleryProps {
 
 type SortKey = 'date' | 'name';
 type SortDirection = 'asc' | 'desc';
-
-const renderIcon = (mediaType: MediaType, className: string) => {
-    switch (mediaType) {
-        case 'audio': return <MusicIcon className={className} />;
-        case 'image': return <ImageIcon className={className} />;
-        case 'video':
-        default: return <FilmIcon className={className} />;
-    }
-};
-
-const MediaThumbnail: React.FC<{
-    mediaItem: MediaData,
-    onSelect: () => void,
-    onDelete: (e: React.MouseEvent) => void,
-}> = ({ mediaItem, onSelect, onDelete }) => {
-    const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
-
-    useEffect(() => {
-        let isMounted = true;
-        const thumbnailCacheKey = `thumbnail_${mediaItem.id}`;
-        let objectUrl: string | null = null;
-
-        const generateThumbnail = async () => {
-            try {
-                const cachedThumbnail = localStorage.getItem(thumbnailCacheKey);
-                if (cachedThumbnail) {
-                    if (isMounted) setThumbnailUrl(cachedThumbnail);
-                    return;
-                }
-            } catch (e) {
-                console.warn('Could not access localStorage for thumbnail cache.', e);
-            }
-
-            const blob = await mediaDBService.getMedia(mediaItem.id);
-            if (!blob || !isMounted) return;
-
-            if (mediaItem.mediaType === 'image') {
-                objectUrl = URL.createObjectURL(blob);
-                if (isMounted) setThumbnailUrl(objectUrl);
-            } else if (mediaItem.mediaType === 'video') {
-                const video = document.createElement('video');
-                video.muted = true;
-                video.playsInline = true;
-                objectUrl = URL.createObjectURL(blob);
-                video.src = objectUrl;
-
-                const captureFrame = () => {
-                    if (!isMounted) return;
-                    const canvas = document.createElement('canvas');
-                    const aspectRatio = video.videoWidth / video.videoHeight;
-                    canvas.width = 160;
-                    canvas.height = 160 / aspectRatio;
-                    const ctx = canvas.getContext('2d');
-                    if (ctx) {
-                        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-                        const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
-                        if (isMounted) setThumbnailUrl(dataUrl);
-                        try {
-                            localStorage.setItem(thumbnailCacheKey, dataUrl);
-                        } catch (e) {
-                            console.warn("Could not cache thumbnail, storage might be full.", e);
-                        }
-                    }
-                    if (objectUrl) URL.revokeObjectURL(objectUrl);
-                    objectUrl = null;
-                };
-
-                video.onseeked = captureFrame;
-                video.onloadeddata = () => {
-                    const seekTime = video.duration > 1 ? 1 : video.duration / 2;
-                    video.currentTime = seekTime;
-                };
-                video.onerror = () => {
-                    if (objectUrl) URL.revokeObjectURL(objectUrl);
-                    if (isMounted) setThumbnailUrl('error');
-                };
-            } else {
-                if (isMounted) setThumbnailUrl('audio_placeholder');
-            }
-        };
-
-        generateThumbnail();
-
-        return () => {
-            isMounted = false;
-            if (thumbnailUrl && thumbnailUrl.startsWith('blob:')) {
-                URL.revokeObjectURL(thumbnailUrl);
-            }
-            if (objectUrl) {
-                URL.revokeObjectURL(objectUrl);
-            }
-        };
-    }, [mediaItem]);
-
-    const isVisual = thumbnailUrl && !['audio_placeholder', 'error'].includes(thumbnailUrl);
-
-    return (
-        <div
-            onClick={onSelect}
-            className="relative aspect-video bg-gray-200 dark:bg-gray-700 rounded-lg flex flex-col items-center justify-center text-center cursor-pointer group overflow-hidden border border-gray-300 dark:border-gray-600 hover:border-cyan-500 hover:scale-105 transition-all duration-300 shadow-md"
-        >
-            <button
-                onClick={onDelete}
-                className="absolute top-1 right-1 z-20 p-1.5 bg-black/40 text-white rounded-full opacity-0 group-hover:opacity-100 hover:bg-red-500/80 transition-all"
-                aria-label="Delete media"
-            >
-                <TrashIcon className="w-4 h-4" />
-            </button>
-
-            {!thumbnailUrl && <SpinnerIcon className="w-8 h-8 text-gray-400 dark:text-gray-500 animate-spin" />}
-            {isVisual ? (
-                <img src={thumbnailUrl} alt={mediaItem.name} className="w-full h-full object-cover" />
-            ) : (
-                thumbnailUrl && renderIcon(mediaItem.mediaType, "w-1/3 h-1/3 text-gray-500 dark:text-gray-400 group-hover:text-cyan-400")
-            )}
-
-            <div className="absolute bottom-0 left-0 right-0 bg-black/50 backdrop-blur-sm p-2">
-                <p className="text-xs text-white font-medium truncate" title={mediaItem.name}>
-                    {mediaItem.name}
-                </p>
-            </div>
-            <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-        </div>
-    );
-};
-
 
 const MediaGallery: React.FC<MediaGalleryProps> = ({ media, onSelectMedia, onUploadClick, onDeleteMedia }) => {
   const { t } = useTranslation();
@@ -164,6 +35,17 @@ const MediaGallery: React.FC<MediaGalleryProps> = ({ media, onSelectMedia, onUpl
     '<1': t('gallery.durationShort'),
     '1-5': t('gallery.durationMedium'),
     '>5': t('gallery.durationLong'),
+  };
+  
+  const isFiltered = useMemo(() => 
+    searchQuery.length > 0 || typeFilter !== 'all' || durationFilter !== 'any', 
+    [searchQuery, typeFilter, durationFilter]
+  );
+
+  const handleClearFilters = () => {
+    setSearchQuery('');
+    setTypeFilter('all');
+    setDurationFilter('any');
   };
 
   const handleDelete = (e: React.MouseEvent, mediaId: string) => {
@@ -295,6 +177,18 @@ const MediaGallery: React.FC<MediaGalleryProps> = ({ media, onSelectMedia, onUpl
                     </option>
                   ))}
                 </select>
+              </div>
+              <div className="sm:ml-auto pr-1">
+                {isFiltered && (
+                    <button
+                        onClick={handleClearFilters}
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-md transition-colors"
+                        title={t('gallery.clearFilters')}
+                    >
+                        <XIcon className="w-4 h-4" />
+                        <span>{t('gallery.clearFilters')}</span>
+                    </button>
+                )}
               </div>
             </div>
           </div>
