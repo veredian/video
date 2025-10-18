@@ -1,33 +1,33 @@
 import React, { useState, useMemo } from 'react';
 import { MediaData, MediaType } from '../services/authService';
-import { FilmIcon } from './icons/FilmIcon';
+import { mediaDBService } from '../services/mediaDBService';
+import MediaThumbnail from './MediaThumbnail';
 import { PlusIcon } from './icons/PlusIcon';
-import { TrashIcon } from './icons/TrashIcon';
 import { SearchIcon } from './icons/SearchIcon';
 import { SortAscIcon } from './icons/SortAscIcon';
 import { SortDescIcon } from './icons/SortDescIcon';
-import { MusicIcon } from './icons/MusicIcon';
-import { ImageIcon } from './icons/ImageIcon';
 import { FilterIcon } from './icons/FilterIcon';
+import { XIcon } from './icons/XIcon';
+import { useTranslation } from '../i18n/LanguageContext';
+import { ImageIcon } from './icons/ImageIcon';
+import { DownloadIcon } from './icons/DownloadIcon';
+import { TrashIcon } from './icons/TrashIcon';
+
 
 interface MediaGalleryProps {
   media: MediaData[];
   onSelectMedia: (media: MediaData) => void;
   onUploadClick: () => void;
   onDeleteMedia: (mediaId: string) => void;
+  performanceMode: boolean;
 }
 
 type SortKey = 'date' | 'name';
 type SortDirection = 'asc' | 'desc';
 
-const DURATION_OPTIONS: Record<string, string> = {
-    'any': 'Any Duration',
-    '<1': '< 1 min',
-    '1-5': '1-5 min',
-    '>5': '> 5 min',
-};
 
-const MediaGallery: React.FC<MediaGalleryProps> = ({ media, onSelectMedia, onUploadClick, onDeleteMedia }) => {
+const MediaGallery: React.FC<MediaGalleryProps> = ({ media, onSelectMedia, onUploadClick, onDeleteMedia, performanceMode }) => {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: SortDirection }>({
     key: 'date',
@@ -35,12 +35,25 @@ const MediaGallery: React.FC<MediaGalleryProps> = ({ media, onSelectMedia, onUpl
   });
   const [typeFilter, setTypeFilter] = useState<MediaType | 'all'>('all');
   const [durationFilter, setDurationFilter] = useState<string>('any');
+  const [isSelectMode, setIsSelectMode] = useState(false);
+  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
+  
+  const DURATION_OPTIONS: Record<string, string> = {
+    'any': t('gallery.durationAny'),
+    '<1': t('gallery.durationShort'),
+    '1-5': t('gallery.durationMedium'),
+    '>5': t('gallery.durationLong'),
+  };
+  
+  const isFiltered = useMemo(() => 
+    searchQuery.length > 0 || typeFilter !== 'all' || durationFilter !== 'any', 
+    [searchQuery, typeFilter, durationFilter]
+  );
 
-  const handleDelete = (e: React.MouseEvent, mediaId: string) => {
-    e.stopPropagation(); // Prevent onSelectMedia from firing
-    if (window.confirm('Are you sure you want to delete this media? This action cannot be undone.')) {
-        onDeleteMedia(mediaId);
-    }
+  const handleClearFilters = () => {
+    setSearchQuery('');
+    setTypeFilter('all');
+    setDurationFilter('any');
   };
 
   const filteredAndSortedMedia = useMemo(() => {
@@ -63,11 +76,13 @@ const MediaGallery: React.FC<MediaGalleryProps> = ({ media, onSelectMedia, onUpl
       if (sortConfig.key === 'name') {
         comparison = a.name.localeCompare(b.name);
       } else { // date
-        comparison = parseInt(a.id, 10) - parseInt(b.id, 10);
+        comparison = parseInt(b.id, 10) - parseInt(a.id, 10);
       }
-      return sortConfig.direction === 'asc' ? comparison : -comparison;
+      return sortConfig.direction === 'asc' ? -comparison : comparison;
     });
   }, [media, searchQuery, typeFilter, durationFilter, sortConfig]);
+
+  const totalItems = filteredAndSortedMedia.length;
 
   const handleSort = (key: SortKey) => {
     setSortConfig(prev => ({
@@ -79,6 +94,73 @@ const MediaGallery: React.FC<MediaGalleryProps> = ({ media, onSelectMedia, onUpl
   const toggleSortDirection = () => {
     setSortConfig(prev => ({ ...prev, direction: prev.direction === 'asc' ? 'desc' : 'asc' }));
   };
+  
+  const handleToggleSelectMode = () => {
+    setIsSelectMode(!isSelectMode);
+    setSelectedItems(new Set()); // Clear selections when toggling mode
+  };
+  
+  const handleToggleItemSelection = (id: string) => {
+    setSelectedItems(prev => {
+        const newSelection = new Set(prev);
+        if (newSelection.has(id)) {
+            newSelection.delete(id);
+        } else {
+            newSelection.add(id);
+        }
+        return newSelection;
+    });
+  };
+  
+  const allVisibleSelected = useMemo(() => 
+    totalItems > 0 && selectedItems.size === totalItems,
+    [selectedItems.size, totalItems]
+  );
+
+  const handleSelectAll = () => {
+    if (allVisibleSelected) {
+        setSelectedItems(new Set());
+    } else {
+        setSelectedItems(new Set(filteredAndSortedMedia.map(item => item.id)));
+    }
+  };
+  
+  const handleDeleteSelected = () => {
+    const count = selectedItems.size;
+    if (count === 0) return;
+    if (window.confirm(t('gallery.confirmDeleteSelected', { count }))) {
+        selectedItems.forEach(id => onDeleteMedia(id));
+        setSelectedItems(new Set());
+        setIsSelectMode(false);
+    }
+  };
+  
+  const handleDownloadSelected = async () => {
+    if (selectedItems.size === 0) return;
+    const link = document.createElement('a');
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    for (const id of selectedItems) {
+        try {
+            const mediaItem = media.find(m => m.id === id);
+            const blob = await mediaDBService.getMedia(id);
+            if (mediaItem && blob) {
+                const objectUrl = URL.createObjectURL(blob);
+                link.href = objectUrl;
+                link.download = String(mediaItem.name);
+                link.click();
+                await new Promise(resolve => setTimeout(resolve, 300));
+                URL.revokeObjectURL(objectUrl);
+            }
+        } catch (error) {
+            console.error(`Failed to download media with id ${id}:`, error);
+        }
+    }
+    document.body.removeChild(link);
+    setSelectedItems(new Set());
+    setIsSelectMode(false);
+  };
+
 
   const SortButton: React.FC<{ sortKey: SortKey, children: React.ReactNode }> = ({ sortKey, children }) => (
     <button
@@ -101,29 +183,61 @@ const MediaGallery: React.FC<MediaGalleryProps> = ({ media, onSelectMedia, onUpl
       {children}
     </button>
   );
-  
-  const renderIcon = (mediaType: MediaType, className: string) => {
-    switch (mediaType) {
-        case 'audio': return <MusicIcon className={className} />;
-        case 'image': return <ImageIcon className={className} />;
-        case 'video':
-        default: return <FilmIcon className={className} />;
-    }
-  };
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Your Media Library</h2>
-        <button
-          onClick={onUploadClick}
-          className="hidden sm:flex items-center gap-2 bg-gradient-to-r from-cyan-400 to-blue-500 hover:from-cyan-500 hover:to-blue-600 text-white font-bold py-2 px-4 rounded-md transition-all duration-300 transform hover:scale-105 shadow-lg shadow-cyan-500/20"
-        >
-          <PlusIcon className="w-5 h-5" />
-          Upload New Media
-        </button>
+      <div className="flex justify-between items-center mb-6 gap-4">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{t('gallery.title')}</h2>
+        <div className="flex items-center gap-2">
+            {media.length > 0 && (
+                <button
+                    onClick={handleToggleSelectMode}
+                    className="flex items-center gap-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-white font-semibold py-2 px-4 rounded-md transition-colors"
+                >
+                    {isSelectMode ? t('gallery.cancel') : t('gallery.select')}
+                </button>
+            )}
+            <button
+              onClick={onUploadClick}
+              className={`hidden ${isSelectMode ? '' : 'sm:flex'} items-center gap-2 bg-cyan-500 hover:bg-cyan-600 text-black font-bold py-2 px-4 rounded-md transition-all duration-300 transform hover:scale-105 shadow-lg shadow-cyan-500/20`}
+            >
+              <PlusIcon className="w-5 h-5" />
+              {t('gallery.uploadNew')}
+            </button>
+        </div>
       </div>
       
+      {isSelectMode && (
+        <div className="bg-cyan-500/10 dark:bg-cyan-900/20 p-3 rounded-lg mb-6 flex flex-col sm:flex-row items-center justify-between gap-4 animate-fade-in-up border border-cyan-500/20">
+            <div className="flex items-center gap-4">
+                <button onClick={handleSelectAll} className="font-semibold text-cyan-700 dark:text-cyan-300 hover:underline">
+                    {allVisibleSelected ? t('gallery.deselectAll') : t('gallery.selectAll')}
+                </button>
+                <p className="font-semibold text-gray-800 dark:text-gray-200">
+                    {t('gallery.itemsSelected', { count: selectedItems.size })}
+                </p>
+            </div>
+            <div className="flex items-center gap-2">
+                <button 
+                    onClick={handleDownloadSelected} 
+                    disabled={selectedItems.size === 0} 
+                    className="flex items-center gap-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    <DownloadIcon className="w-5 h-5" />
+                    <span>{t('gallery.downloadSelected')}</span>
+                </button>
+                <button 
+                    onClick={handleDeleteSelected} 
+                    disabled={selectedItems.size === 0}
+                    className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    <TrashIcon className="w-5 h-5" />
+                    <span>{t('gallery.deleteSelected')}</span>
+                </button>
+            </div>
+        </div>
+      )}
+
       {media.length > 0 && (
         <div className="space-y-4 mb-6">
           <div className="relative flex-grow">
@@ -134,16 +248,16 @@ const MediaGallery: React.FC<MediaGalleryProps> = ({ media, onSelectMedia, onUpl
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search media by name..."
+              placeholder={t('gallery.searchPlaceholder')}
               className="w-full pl-10 pr-4 py-2 bg-gray-100 dark:bg-gray-700/50 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 transition-colors"
               aria-label="Search media"
             />
           </div>
           <div className="flex flex-col xl:flex-row gap-4">
             <div className="flex items-center justify-center gap-2 bg-gray-100 dark:bg-gray-700/50 p-1 rounded-lg border border-gray-300 dark:border-gray-600">
-              <span className="text-sm font-medium text-gray-500 dark:text-gray-400 pl-2">Sort by:</span>
-              <SortButton sortKey="date">Date</SortButton>
-              <SortButton sortKey="name">Name</SortButton>
+              <span className="text-sm font-medium text-gray-500 dark:text-gray-400 pl-2">{t('gallery.sortBy')}</span>
+              <SortButton sortKey="date">{t('gallery.date')}</SortButton>
+              <SortButton sortKey="name">{t('gallery.name')}</SortButton>
               <button
                   onClick={toggleSortDirection}
                   className="p-1.5 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-md"
@@ -155,10 +269,10 @@ const MediaGallery: React.FC<MediaGalleryProps> = ({ media, onSelectMedia, onUpl
             <div className="flex-grow flex flex-col sm:flex-row items-center gap-2 bg-gray-100 dark:bg-gray-700/50 p-1 rounded-lg border border-gray-300 dark:border-gray-600">
               <div className="flex items-center gap-1 p-1 flex-wrap justify-center">
                 <FilterIcon className="w-5 h-5 text-gray-500 dark:text-gray-400 ml-2" />
-                <TypeFilterButton filter="all">All</TypeFilterButton>
-                <TypeFilterButton filter="video">Videos</TypeFilterButton>
-                <TypeFilterButton filter="audio">Audio</TypeFilterButton>
-                <TypeFilterButton filter="image">Images</TypeFilterButton>
+                <TypeFilterButton filter="all">{t('gallery.all')}</TypeFilterButton>
+                <TypeFilterButton filter="video">{t('gallery.videos')}</TypeFilterButton>
+                <TypeFilterButton filter="audio">{t('gallery.audio')}</TypeFilterButton>
+                <TypeFilterButton filter="image">{t('gallery.images')}</TypeFilterButton>
               </div>
               <div className="relative flex items-center gap-1 p-1">
                 <select
@@ -175,6 +289,18 @@ const MediaGallery: React.FC<MediaGalleryProps> = ({ media, onSelectMedia, onUpl
                   ))}
                 </select>
               </div>
+              <div className="sm:ml-auto pr-1">
+                {isFiltered && (
+                    <button
+                        onClick={handleClearFilters}
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-md transition-colors"
+                        title={t('gallery.clearFilters')}
+                    >
+                        <XIcon className="w-4 h-4" />
+                        <span>{t('gallery.clearFilters')}</span>
+                    </button>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -183,50 +309,45 @@ const MediaGallery: React.FC<MediaGalleryProps> = ({ media, onSelectMedia, onUpl
       {media.length === 0 ? (
         <div className="text-center py-16 px-6 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg">
           <ImageIcon className="w-16 h-16 mx-auto text-gray-400 dark:text-gray-500 mb-4" />
-          <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200">Your gallery is empty</h3>
+          <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200">{t('gallery.emptyTitle')}</h3>
           <p className="text-gray-500 dark:text-gray-400 mt-2">
-            Click the button below to get started and add your first media file.
+            {t('gallery.emptyDescription')}
           </p>
            <button
               onClick={onUploadClick}
-              className="mt-6 flex sm:hidden mx-auto items-center gap-2 bg-gradient-to-r from-cyan-400 to-blue-500 hover:from-cyan-500 hover:to-blue-600 text-white font-bold py-2 px-4 rounded-md transition-all duration-300 transform hover:scale-105 shadow-lg shadow-cyan-500/20"
+              className="mt-6 flex sm:hidden mx-auto items-center gap-2 bg-cyan-500 hover:bg-cyan-600 text-black font-bold py-2 px-4 rounded-md transition-all duration-300 transform hover:scale-105 shadow-lg shadow-cyan-500/20"
             >
               <PlusIcon className="w-5 h-5" />
-              Upload New Media
+              {t('gallery.uploadNew')}
             </button>
         </div>
-      ) : filteredAndSortedMedia.length === 0 ? (
+      ) : totalItems === 0 ? (
         <div className="text-center py-16 px-6 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg">
           <SearchIcon className="w-16 h-16 mx-auto text-gray-400 dark:text-gray-500 mb-4" />
-          <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200">No Media Found</h3>
+          <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200">{t('gallery.noResultsTitle')}</h3>
           <p className="text-gray-500 dark:text-gray-400 mt-2">
-            Your search and filter criteria did not match any files.
+            {t('gallery.noResultsDescription')}
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          {filteredAndSortedMedia.map((item) => (
-            <div
-              key={item.id}
-              onClick={() => onSelectMedia(item)}
-              className="relative aspect-video bg-gray-200 dark:bg-gray-700 rounded-lg flex flex-col items-center justify-center text-center p-2 cursor-pointer group overflow-hidden border border-gray-300 dark:border-gray-600 hover:border-cyan-500 transition-all duration-200"
-            >
-              <button
-                onClick={(e) => handleDelete(e, item.id)}
-                className="absolute top-1 right-1 z-20 p-1.5 bg-black/40 text-white rounded-full opacity-0 group-hover:opacity-100 hover:bg-red-500/80 transition-all duration-200"
-                aria-label="Delete media"
-              >
-                <TrashIcon className="w-4 h-4" />
-              </button>
-              {renderIcon(item.mediaType, "w-1/3 h-1/3 text-gray-500 dark:text-gray-400 group-hover:text-cyan-400 transition-colors")}
-              <div className="absolute bottom-0 left-0 right-0 bg-black/50 backdrop-blur-sm p-2">
-                <p className="text-xs text-white font-medium truncate" title={item.name}>
-                  {item.name}
-                </p>
-              </div>
-               <div className="absolute inset-0 bg-cyan-500/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-            </div>
-          ))}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8">
+            {filteredAndSortedMedia.map(item => (
+                <MediaThumbnail
+                    key={item.id}
+                    mediaItem={item}
+                    onSelect={() => onSelectMedia(item)}
+                    onDelete={(e) => {
+                        e.stopPropagation();
+                        if (window.confirm(t('main.confirmDelete'))) {
+                            onDeleteMedia(item.id);
+                        }
+                    }}
+                    isSelectMode={isSelectMode}
+                    isSelected={selectedItems.has(item.id)}
+                    onToggleSelect={() => handleToggleItemSelection(item.id)}
+                    performanceMode={performanceMode}
+                />
+            ))}
         </div>
       )}
     </div>

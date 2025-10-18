@@ -89,23 +89,19 @@ const AskAiPanel: React.FC<AskAiPanelProps> = ({ media }) => {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-lg border border-gray-300 dark:border-gray-700 h-full flex flex-col">
-      <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white flex items-center gap-2">
-        <SparklesIcon className="w-5 h-5 text-cyan-400" />
-        {t('aiPanel.title')}
-      </h3>
+    <div className="h-full flex flex-col">
       <div className="relative flex-grow flex flex-col">
         <textarea
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
           placeholder={t('aiPanel.placeholder')}
-          className="w-full h-24 p-2 text-sm text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-900 rounded-md border border-gray-300 dark:border-gray-700 focus:ring-cyan-500 focus:border-cyan-500 resize-none"
+          className="w-full h-24 p-2 text-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 rounded-md border border-gray-300 dark:border-gray-700 focus:ring-cyan-500 focus:border-cyan-500 resize-none"
           disabled={isLoading}
         />
         <button
           onClick={handleAsk}
           disabled={isLoading}
-          className="mt-2 w-full flex justify-center items-center gap-2 bg-cyan-500 hover:bg-cyan-600 text-white font-semibold py-2 px-4 rounded-md transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="mt-2 w-full flex justify-center items-center gap-2 bg-cyan-500 hover:bg-cyan-600 text-black font-semibold py-2 px-4 rounded-md transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isLoading ? (
             <>
@@ -121,7 +117,7 @@ const AskAiPanel: React.FC<AskAiPanelProps> = ({ media }) => {
         </button>
         <div className="mt-4 flex-grow overflow-y-auto max-h-64 pr-2">
             {response && (
-                 <div className="text-sm p-3 bg-gray-100 dark:bg-gray-900/50 rounded-lg whitespace-pre-wrap">
+                 <div className="text-sm p-3 bg-white dark:bg-gray-800/50 rounded-lg whitespace-pre-wrap">
                     <p className="font-semibold text-gray-800 dark:text-gray-200 mb-1">{t('aiPanel.answer')}</p>
                     <p className="text-gray-600 dark:text-gray-300">{response}</p>
                 </div>

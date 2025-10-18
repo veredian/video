@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import MediaUploader from './VideoUploader';
-import MediaPlayer from './VideoPlayer';
+import MediaPlayer from './MediaPlayer';
 import ShareOptions from './ShareOptions';
 import SettingsModal from './SettingsModal';
 import MediaGallery from './VideoGallery';
@@ -19,6 +19,8 @@ import { mediaDBService } from '../services/mediaDBService';
 import { Settings } from '../App';
 import LanguageSwitcher from './LanguageSwitcher';
 import { useTranslation } from '../i18n/LanguageContext';
+import { ThumbsUpIcon } from './icons/ThumbsUpIcon';
+import { ShareIcon } from './icons/ShareIcon';
 
 interface MainAppProps {
     user: User;
@@ -36,6 +38,7 @@ const MainApp: React.FC<MainAppProps> = ({ user, onLogout, settings, onSettingsC
   const [isUploading, setIsUploading] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
+  const [activeInfoTab, setActiveInfoTab] = useState<'share' | 'ai'>('share');
 
   const handleMediaUpload = useCallback(async (mediaFile: File) => {
     const updatedUser = await authService.addMediaForCurrentUser(mediaFile);
@@ -139,61 +142,94 @@ const MainApp: React.FC<MainAppProps> = ({ user, onLogout, settings, onSettingsC
 
   const renderContent = () => {
     if (selectedMedia && mediaUrlForRender) {
+        const uploadDate = new Date(parseInt(selectedMedia.id, 10));
+        const simulatedViews = (parseInt(selectedMedia.id.slice(-4), 10) % 100) * 17 + 25; // pseudo-random views
         return (
             <div>
-            <div className="flex items-center gap-4 mb-6">
-                <button
-                    onClick={handleBackToGallery}
-                    className="p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition-colors"
-                    aria-label="Back to gallery"
-                >
-                    <ArrowLeftIcon className="w-6 h-6" />
-                </button>
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white truncate" title={selectedMedia.name}>
-                    {selectedMedia.name}
-                </h2>
-            </div>
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-                <div className="xl:col-span-2 w-full">
-                <MediaPlayer 
-                    key={selectedMedia.id}
-                    src={mediaUrlForRender} 
-                    mediaType={selectedMedia.mediaType}
-                    fileName={selectedMedia.name}
-                    mimeType={selectedMedia.type}
-                    loop={settings.loopVideo} 
-                    cinemaMode={settings.cinemaMode}
-                    showWatermark={settings.showWatermark}
-                    watermarkText={watermarkText}
-                    defaultPlaybackSpeed={settings.defaultPlaybackSpeed}
-                    performanceMode={settings.performanceMode}
-                />
+              <div className="mb-4">
+                  <button
+                      onClick={handleBackToGallery}
+                      className="flex items-center gap-2 mb-4 p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition-colors"
+                      aria-label="Back to gallery"
+                  >
+                      <ArrowLeftIcon className="w-6 h-6" />
+                      <span className="font-semibold">{t('main.backToGallery')}</span>
+                  </button>
+                  <div className="w-full">
+                      <MediaPlayer 
+                          key={selectedMedia.id}
+                          src={mediaUrlForRender} 
+                          mediaType={selectedMedia.mediaType}
+                          fileName={selectedMedia.name}
+                          mimeType={selectedMedia.type}
+                          loop={settings.loopVideo} 
+                          cinemaMode={settings.cinemaMode}
+                          showWatermark={settings.showWatermark}
+                          watermarkText={watermarkText}
+                          defaultPlaybackSpeed={settings.defaultPlaybackSpeed}
+                          performanceMode={settings.performanceMode}
+                      />
+                  </div>
+              </div>
+
+              <div className="mt-4">
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white" title={selectedMedia.name}>
+                      {selectedMedia.name}
+                  </h2>
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mt-2 gap-2">
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                          {simulatedViews.toLocaleString()} {t('gallery.views')} &bull; {uploadDate.toLocaleDateString()}
+                      </p>
+                      <div className="flex items-center gap-2">
+                          <button className="flex items-center gap-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 font-semibold py-2 px-4 rounded-full transition-colors duration-200">
+                            <ThumbsUpIcon className="w-5 h-5" />
+                            <span>{t('gallery.like')}</span>
+                          </button>
+                          <button
+                              onClick={handleDownloadMedia}
+                              className="flex items-center gap-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 font-semibold py-2 px-4 rounded-full transition-colors duration-200"
+                          >
+                              <DownloadIcon className="w-5 h-5" />
+                              {t('main.download')}
+                          </button>
+                          <button
+                              onClick={() => setActiveInfoTab('share')}
+                              className="flex items-center gap-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 font-semibold py-2 px-4 rounded-full transition-colors duration-200"
+                          >
+                              <ShareIcon className="w-5 h-5" />
+                              {t('share.title')}
+                          </button>
+                          <button
+                              onClick={() => {
+                                  if (window.confirm(t('main.confirmDelete'))) {
+                                      handleDeleteMedia(selectedMedia.id);
+                                  }
+                              }}
+                              className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-full transition-colors duration-300 shadow-lg shadow-red-500/20"
+                          >
+                              <TrashIcon className="w-5 h-5" />
+                          </button>
+                      </div>
+                  </div>
+              </div>
+
+              <div className="mt-6">
+                <div className="border-b border-gray-300 dark:border-gray-700 mb-4">
+                    <button onClick={() => setActiveInfoTab('share')} className={`px-4 py-2 font-semibold transition-colors ${activeInfoTab === 'share' ? 'text-cyan-500 border-b-2 border-cyan-500' : 'text-gray-500 hover:text-cyan-400'}`}>
+                        {t('share.tabTitle')}
+                    </button>
+                    <button onClick={() => setActiveInfoTab('ai')} className={`px-4 py-2 font-semibold transition-colors ${activeInfoTab === 'ai' ? 'text-cyan-500 border-b-2 border-cyan-500' : 'text-gray-500 hover:text-cyan-400'}`}>
+                        {t('aiPanel.tabTitle')}
+                    </button>
                 </div>
-                <div className="flex flex-col gap-4">
-                <ShareOptions mediaUrl={mediaUrlForRender} fileName={selectedMedia.name} mediaType={selectedMedia.mediaType} />
-                <AskAiPanel media={selectedMedia} />
-                </div>
-            </div>
-            <div className="flex flex-wrap justify-center items-center gap-4 mt-8">
-                <button
-                onClick={handleDownloadMedia}
-                className="flex items-center gap-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300 shadow-lg shadow-gray-500/20"
-                >
-                <DownloadIcon className="w-5 h-5" />
-                {t('main.download')}
-                </button>
-                <button
-                onClick={() => {
-                    if (window.confirm(t('main.confirmDelete'))) {
-                        handleDeleteMedia(selectedMedia.id);
-                    }
-                }}
-                className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300 shadow-lg shadow-red-500/20"
-                >
-                <TrashIcon className="w-5 h-5" />
-                {t('main.delete')}
-                </button>
-            </div>
+                 <div className="bg-gray-100 dark:bg-gray-900/50 p-4 rounded-lg min-h-[200px]">
+                    {activeInfoTab === 'share' ? (
+                        <ShareOptions mediaUrl={mediaUrlForRender} fileName={selectedMedia.name} mediaType={selectedMedia.mediaType} />
+                    ) : (
+                        <AskAiPanel media={selectedMedia} />
+                    )}
+                 </div>
+              </div>
             </div>
         );
     }
@@ -210,7 +246,7 @@ const MainApp: React.FC<MainAppProps> = ({ user, onLogout, settings, onSettingsC
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center p-4 sm:p-6 lg:p-8 font-sans">
+    <div className={`min-h-screen flex flex-col items-center p-4 sm:p-6 lg:p-8 font-sans ${selectedMedia ? '' : 'justify-center'}`}>
       <div className="w-full max-w-6xl mx-auto">
         <header className="flex items-center justify-between mb-8 w-full">
             <div className="flex items-center gap-3">
@@ -251,7 +287,7 @@ const MainApp: React.FC<MainAppProps> = ({ user, onLogout, settings, onSettingsC
             </div>
         </header>
 
-        <main className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm rounded-2xl shadow-2xl shadow-cyan-500/10 p-6 sm:p-8 border border-gray-300 dark:border-gray-700">
+        <main className={`${selectedMedia ? '' : 'bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm rounded-2xl shadow-2xl shadow-cyan-500/10 p-6 sm:p-8 border border-gray-300 dark:border-gray-700'}`}>
             <div key={selectedMedia ? selectedMedia.id : 'gallery'} className="opacity-0 animate-fade-in-up">
               {renderContent()}
             </div>

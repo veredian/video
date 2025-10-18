@@ -65,17 +65,22 @@
     "selectAll": "Select All",
     "deselectAll": "Deselect All",
     "confirmDeleteSelected": "Are you sure you want to delete the selected {count} items? This action cannot be undone.",
-    "categoryMovies": "Movies",
-    "categoryVideoClips": "Video Clips",
-    "categoryMusic": "Music Library",
-    "categoryImages": "Image Gallery"
+    "views": "views",
+    "like": "Like",
+    "yearsAgo": "{count} years ago",
+    "monthsAgo": "{count} months ago",
+    "daysAgo": "{count} days ago",
+    "hoursAgo": "{count} hours ago",
+    "minutesAgo": "{count} minutes ago",
+    "justNow": "Just now"
   },
   "player": {
     "errorTitle": "Could not load media.",
     "errorDescription": "The file may be corrupted or missing."
   },
   "share": {
-    "title": "Share Media",
+    "title": "Share",
+    "tabTitle": "Share & Embed",
     "shareLink": "Share Link",
     "embedCode": "Embed Code",
     "linkDescription": "Anyone with this link can view the media in this browser session.",
@@ -84,6 +89,7 @@
   },
   "aiPanel": {
     "title": "Ask About Media",
+    "tabTitle": "Ask AI",
     "placeholder": "Ask a specific question (optional)...",
     "analyze": "Analyze Media",
     "ask": "Ask AI",

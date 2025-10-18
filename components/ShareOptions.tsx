@@ -58,7 +58,7 @@ const ShareOptions: React.FC<ShareOptionsProps> = ({ mediaUrl, fileName, mediaTy
   );
 
   const CodeBox: React.FC<{ content: string; copied: boolean; onCopy: () => void }> = ({ content, copied, onCopy }) => (
-    <div className="relative bg-gray-100 dark:bg-gray-900 rounded-lg p-4 mt-4 border border-gray-300 dark:border-gray-700">
+    <div className="relative bg-white dark:bg-gray-800 rounded-lg p-4 mt-4 border border-gray-300 dark:border-gray-700">
       <pre className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap break-all pr-12">
         <code>{content}</code>
       </pre>
@@ -73,9 +73,8 @@ const ShareOptions: React.FC<ShareOptionsProps> = ({ mediaUrl, fileName, mediaTy
   );
 
   return (
-    <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-lg border border-gray-300 dark:border-gray-700 h-full flex flex-col">
-      <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">{t('share.title')}</h3>
-      <div className="flex gap-2 p-1 bg-gray-100 dark:bg-gray-900/50 rounded-lg">
+    <div className="h-full flex flex-col">
+      <div className="flex gap-2 p-1 bg-gray-200/50 dark:bg-gray-900/50 rounded-lg">
         <TabButton tabName="link" label={t('share.shareLink')} icon={<LinkIcon className="w-5 h-5" />} />
         <TabButton tabName="embed" label={t('share.embedCode')} icon={<CodeIcon className="w-5 h-5" />} />
       </div>

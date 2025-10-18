@@ -65,17 +65,22 @@
     "selectAll": "Toranya Byose",
     "deselectAll": "Bireke Byose",
     "confirmDeleteSelected": "Urifuza gusiba ibintu {count} byatoranijwe? Iki gikorwa ntigishobora gusubizwamo.",
-    "categoryMovies": "Filime",
-    "categoryVideoClips": "Amashusho Magufi",
-    "categoryMusic": "Isomero ry'Indirimbo",
-    "categoryImages": "Isomero ry'Amafoto"
+    "views": "barebye",
+    "like": "Kunda",
+    "yearsAgo": "hashize imyaka {count}",
+    "monthsAgo": "hashize amezi {count}",
+    "daysAgo": "hashize iminsi {count}",
+    "hoursAgo": "hashize amasaha {count}",
+    "minutesAgo": "hashize iminota {count}",
+    "justNow": "Ako kanya"
   },
   "player": {
     "errorTitle": "Ntibishoboye gufungura dosiye.",
     "errorDescription": "Dosiye ishobora kuba yangiritse cyangwa idahari."
   },
   "share": {
-    "title": "Sangiza Dosiye",
+    "title": "Sangiza",
+    "tabTitle": "Sangiza & Shyiramo",
     "shareLink": "Sangiza Umuhuza",
     "embedCode": "Kode yo Gushyiramo",
     "linkDescription": "Umuntu wese ufite uyu muhuza ashobora kureba iyi dosiye muri iyi sesiyo y'ikoresha.",
@@ -84,6 +89,7 @@
   },
   "aiPanel": {
     "title": "Baza kuri Dosiye",
+    "tabTitle": "Baza AI",
     "placeholder": "Baza ikibazo cyihariye (ubishatse)...",
     "analyze": "Sesengura Dosiye",
     "ask": "Baza AI",
@@ -121,4 +127,26 @@
     "summaryText": "Iyi porogaramu ni porogaramu y'urubuga igezweho kandi y'ubuhanga ikora nk'uburyo bwite kandi bw'umutekano bwo gucunga amashusho bukorerwa mu ikoresha ryawe. Ni {creator} development Software aho abakoresha bashobora kwiyandikisha, kwinjira, gucunga isomero ryabo ryite ry'amashusho, no gukoresha ubwenge bw'ubukorano bukomeye mu gusesengura no gusubiza ibibazo ku bikubiye mu mashusho.",
     "featuresTitle": "Ibintu by'ingenzi",
     "featureAuth": "Kwemeza k'umukoresha mu mutekano: Harimo kwiyandikisha kuzuye, kwinjira, n'inzira yo kwemeza imeri hamwe na \"Nyibuka\" no gusohoka.",
-    "featureMediaManagement": "Gucunga amashusho mu buryo bukomeye: Ikoresha Indexed
+    "featureMediaManagement": "Gucunga amashusho mu buryo bukomeye: Ikoresha IndexedDB y'ikoresha ryawe ku bw'ububiko bw'amashusho bwihuse, bwite, kandi bukora offline. Uburyo bworoshye bwo gushyiramo amashusho bwa drag & drop butuma kongeramo amashusho byoroha.",
+    "featurePlayer": "Umukinnyi w'amashusho w'ubuhanga: Ufite umukinnyi wihariye n'uburyo bwa Sinema budasanzwe butanga isura nziza y'inyuma y'amabara y'ishusho.",
+    "featureAI": "Isesengura ry'amashusho rikoresheje AI: Igice gikomeye cyane cya porogaramu. Ushobora gusaba AI incamake y'ishusho cyangwa kubaza ibibazo byihariye ku biyikubiyemo. Porogaramu yohereza amakuru y'ishusho mu mutekano kuri moderi ya AI y'ubuhanga kugirango isesengure.",
+    "featureShare": "Uburyo bworoshye bwo gusangiza: Hita ukora umuhuza wo gusangiza cyangwa kode yo gushyiramo ya HTML <iframe> ku ishusho iyo ari yo yose. Icyitonderwa, ibi ni iby'igihe gito kandi bishingiye kuri sesiyo.",
+    "featureWatermark": "Ikimenyetso cy'amazi gihindagurika ku mashusho: Ikimenyetso cy'amazi gito kandi kigenda cy'izina ryawe ry'ukoresha gishobora kwerekanwa ku mashusho yawe kugirango wiharire. Ibi bishobora guhindurwa mu igenamiterere.",
+    "featureSettings": "Igenamiterere ryihariye ry'umukoresha: Hitamo uburyo bwawe uhindura Uburyo bwijimye, gusubiramo amashusho, Uburyo bwa Sinema, n'ikimenyetso cy'amazi ku mashusho.",
+    "stackTitle": "Ikoranabuhanga Ryakoreshejwe",
+    "stackFrontend": "Urwego rw'Imbere: React na TypeScript",
+    "stackStyling": "Imiterere: Tailwind CSS",
+    "stackAI": "Guhuza na AI: Isesengura rikoresheje AI",
+    "stackStorage": "Ububiko bw'imbere: IndexedDB (ku madosiye y'amashusho) na LocalStorage (ku makuru y'umukoresha/igenamiterere)",
+    "createdByTitle": "Byakozwe na",
+    "createdByText": "Iyi porogaramu yakozwe na {creator}.",
+    "supportTitle": "Ubufasha & Igenzura",
+    "supportText1": "Iyi porogaramu n'ibiyigize byose bigenzurwa kandi bicungwa na {creator}.",
+    "supportText2": "Ku bw'ubufasha, ibibazo, cyangwa ibindi bibazo, nyamuneka twandikire kuri imeri yacu y'igenzura: {email}.",
+    "troubleshootingTitle": "Gukemura Ibibazo",
+    "troubleshootingIntro": "Niba uhuye n'ikibazo, nyamuneka gerageza ibi bikurikira mbere:",
+    "troubleUpload": "Gushyiramo amashusho byananiranye: Emeza ko ukoresha imiterere isanzwe y'amashusho (nka MP4 cyangwa WebM) kandi ko ikoresha ryawe rifite umwanya uhagije w'ububiko.",
+    "troubleAI": "Ikosa mu isesengura rya AI: Reba interineti yawe. Urufunguzo rwa API rwa serivisi ya AI rugomba kuba rushyizweho neza mu bidukikije bya porogaramu kugirango iki gice gikore.",
+    "troubleGeneral": "Ibibazo rusange: Gerageza gufungura urupapuro bundi bushya cyangwa gusiba cache y'ikoresha ryawe kuri uru rubuga."
+  }
+}
