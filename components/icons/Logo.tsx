@@ -12,16 +12,29 @@ export const Logo: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
         <stop offset="1" stopColor="#3b82f6" />
       </linearGradient>
     </defs>
+
+    {/* Cloud Path for Fill Animation */}
     <path
       className="logo-path-fill"
-      d="M40 135 L129 20 L218 135 L178 135 L129 65 L80 135 Z"
-      fillRule="evenodd"
+      transform="translate(19, -15)"
+      d="M180,110 a 45 45 0 0 0 -45 -45 h -1 a 35 35 0 0 0 -65 -10 a 40 40 0 0 0 -34 40 v 5 h -5 a 30 30 0 1 0 0 60 h 150 a 25 25 0 0 0 0 -50 Z"
     />
-     <path
+    {/* Cloud Path for Stroke Draw Animation */}
+    <path
       className="logo-path-draw"
-      d="M40 135 L129 20 L218 135 L178 135 L129 65 L80 135 Z"
-      fillRule="evenodd"
+      transform="translate(19, -15)"
+      d="M180,110 a 45 45 0 0 0 -45 -45 h -1 a 35 35 0 0 0 -65 -10 a 40 40 0 0 0 -34 40 v 5 h -5 a 30 30 0 1 0 0 60 h 150 a 25 25 0 0 0 0 -50 Z"
     />
+    
+    {/* Arrow Path for Stroke Draw Animation */}
+    <path
+      className="logo-path-draw"
+      d="M129,125 V85 M115,100 L129,85 L143,100"
+      strokeWidth="8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+
     <text
       x="129"
       y="180"
