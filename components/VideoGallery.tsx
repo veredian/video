@@ -182,7 +182,7 @@ const MediaGallery: React.FC<MediaGalleryProps> = ({ media, onSelectMedia, onUpl
             if (mediaItem && blob) {
                 const objectUrl = URL.createObjectURL(blob);
                 link.href = objectUrl;
-                link.download = mediaItem.name;
+                link.download = String(mediaItem.name);
                 link.click();
                 await new Promise(resolve => setTimeout(resolve, 300));
                 URL.revokeObjectURL(objectUrl);

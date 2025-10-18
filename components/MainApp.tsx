@@ -123,7 +123,7 @@ const MainApp: React.FC<MainAppProps> = ({ user, onLogout, settings, onSettingsC
 
     const link = document.createElement('a');
     link.href = mediaUrlForRender;
-    link.download = selectedMedia.name;
+    link.download = String(selectedMedia.name);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -135,7 +135,7 @@ const MainApp: React.FC<MainAppProps> = ({ user, onLogout, settings, onSettingsC
     onSettingsChange({ ...settings, theme: THEMES[nextIndex] });
   };
 
-  const watermarkText = user.email;
+  const watermarkText = settings.watermarkText || user.email;
 
   const renderContent = () => {
     if (selectedMedia && mediaUrlForRender) {

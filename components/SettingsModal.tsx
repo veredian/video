@@ -6,6 +6,7 @@ import { TagIcon } from './icons/TagIcon';
 import { ClockIcon } from './icons/ClockIcon';
 import { BanIcon } from './icons/BanIcon';
 import { ZapIcon } from './icons/ZapIcon';
+import { PencilIcon } from './icons/PencilIcon';
 import { Settings } from '../App';
 import { useTranslation } from '../i18n/LanguageContext';
 
@@ -51,6 +52,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, settings
     onSettingsChange({ ...settings, showWatermark: enabled });
   };
   
+  const handleWatermarkTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    onSettingsChange({ ...settings, watermarkText: e.target.value });
+  };
+
   const handleSpeedChange = (speed: number) => {
     onSettingsChange({ ...settings, defaultPlaybackSpeed: speed });
   };
@@ -148,22 +153,40 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, settings
           </div>
 
           <div className="border-t border-gray-200 dark:border-gray-700"></div>
-
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="flex items-center gap-2">
-                <TagIcon className="w-5 h-5 text-cyan-400" />
-                <p className="font-medium text-gray-800 dark:text-gray-200">{t('settings.showWatermark')}</p>
-              </div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">{t('settings.showWatermarkDesc')}</p>
-            </div>
-            <ToggleSwitch 
-              label="show-watermark"
-              enabled={settings.showWatermark} 
-              onChange={handleWatermarkChange} 
-            />
-          </div>
           
+          <div>
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="flex items-center gap-2">
+                  <TagIcon className="w-5 h-5 text-cyan-400" />
+                  <p className="font-medium text-gray-800 dark:text-gray-200">{t('settings.showWatermark')}</p>
+                </div>
+                <p className="text-sm text-gray-500 dark:text-gray-400">{t('settings.showWatermarkDesc')}</p>
+              </div>
+              <ToggleSwitch 
+                label="show-watermark"
+                enabled={settings.showWatermark} 
+                onChange={handleWatermarkChange} 
+              />
+            </div>
+            <div className={`mt-4 transition-opacity ${settings.showWatermark ? 'opacity-100' : 'opacity-50'}`}>
+                <label htmlFor="watermark-text" className="flex items-center gap-2 text-sm font-medium text-gray-800 dark:text-gray-200">
+                    <PencilIcon className="w-4 h-4" />
+                    {t('settings.customWatermark')}
+                </label>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 mb-2">{t('settings.customWatermarkDesc')}</p>
+                <input
+                    id="watermark-text"
+                    type="text"
+                    value={settings.watermarkText}
+                    onChange={handleWatermarkTextChange}
+                    placeholder={t('settings.customWatermarkPlaceholder')}
+                    disabled={!settings.showWatermark}
+                    className="w-full px-3 py-2 bg-gray-100 dark:bg-gray-900/50 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-cyan-500 focus:border-cyan-500 disabled:cursor-not-allowed"
+                />
+            </div>
+          </div>
+
           <div className="border-t border-gray-200 dark:border-gray-700"></div>
 
           <div>

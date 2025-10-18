@@ -1,7 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import MainApp from './components/MainApp';
 import AuthPage from './components/AuthPage';
-import HomePage from './components/HomePage';
 import { authService, User } from './services/authService';
 
 export interface Settings {
@@ -9,6 +8,7 @@ export interface Settings {
   loopVideo: boolean;
   cinemaMode: boolean;
   showWatermark: boolean;
+  watermarkText: string;
   defaultPlaybackSpeed: number;
   performanceMode: boolean;
 }
@@ -23,7 +23,6 @@ const THEME_CLASSES: Record<Settings['theme'], string> = {
 };
 
 const App: React.FC = () => {
-  const [hasEnteredApp, setHasEnteredApp] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(authService.getCurrentUser());
   
   const [settings, setSettings] = useState<Settings>(() => {
@@ -36,6 +35,7 @@ const App: React.FC = () => {
           loopVideo: parsed.loopVideo !== undefined ? parsed.loopVideo : true,
           cinemaMode: parsed.cinemaMode !== undefined ? parsed.cinemaMode : true,
           showWatermark: parsed.showWatermark !== undefined ? parsed.showWatermark : true,
+          watermarkText: parsed.watermarkText || '',
           defaultPlaybackSpeed: parsed.defaultPlaybackSpeed || 1,
           performanceMode: parsed.performanceMode !== undefined ? parsed.performanceMode : false,
         };
@@ -48,6 +48,7 @@ const App: React.FC = () => {
       loopVideo: true,
       cinemaMode: true,
       showWatermark: true,
+      watermarkText: '',
       defaultPlaybackSpeed: 1,
       performanceMode: false,
     };
@@ -86,28 +87,16 @@ const App: React.FC = () => {
   const handleLogout = useCallback(() => {
     authService.logout();
     setCurrentUser(null);
-    setHasEnteredApp(false);
   }, []);
 
   const handleLogin = (user: User) => {
     setCurrentUser(user);
   };
   
-  const handleEnter = () => {
-    setHasEnteredApp(true);
-  };
-
-  // If a user is already logged in, show the main app directly
   if (currentUser) {
     return <MainApp user={currentUser} onLogout={handleLogout} settings={settings} onSettingsChange={setSettings} />;
   }
   
-  // If not logged in, show the home page first
-  if (!hasEnteredApp) {
-      return <HomePage onEnter={handleEnter} />;
-  }
-
-  // After entering from home page, show the auth page
   return <AuthPage onLogin={handleLogin} />;
 };
 

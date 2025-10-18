@@ -19,19 +19,8 @@
     "logIn": "Injira",
     "errorUserExists": "Umukoresha ufite iyi imeri asanzweho.",
     "errorInvalidCredentials": "Imeri cyangwa ijambobanga si byo.",
-    "successSignup": "Kwiyandikisha byagenze neza. Nyamuneka injira."
-  },
-  "verification": {
-    "title": "Emeza imeri yawe",
-    "description": "Kode yo kwemeza yoherejwe kuri {email}. Nyamuneka shyiramo kode hano hepfo kugirango urangize kwiyandikisha.",
-    "demoCode": "(Muri iyi demo, kode ni: {code})",
-    "codeLabel": "Kode yo Kwemeza",
-    "codePlaceholder": "_ _ _ _ _ _",
-    "errorInvalidCode": "Kode yo kwemeza si yo. Nyamuneka gerageza nanone.",
-    "verifyButton": "Emeza & Fungura Konti",
-    "resendCooldown": "Ushobora kongera kohereza kode mu masegonda {seconds}.",
-    "resendLink": "Ntabwo wakiriye kode? Ongera wohereze",
-    "resendSuccess": "Kode nshya yoherejwe."
+    "successSignup": "Kwiyandikisha byagenze neza! Urahise winjira...",
+    "errorLoginAfterSignup": "Konti yakozwe, ariko kwinjira mu buryo bwikora byananiranye. Nyamuneka injira wowe ubwawe."
   },
   "main": {
     "welcomeBack": "Ikaze wongere!",
@@ -115,7 +104,10 @@
     "performanceMode": "Uburyo bwo Kongera Umuvuduko",
     "performanceModeDesc": "Bigabanya ingaruka n'ubuziranenge kugira ngo byihute.",
     "showWatermark": "Erekana Ikimenyetso",
-    "showWatermarkDesc": "Erekana izina ryawe ku mashusho.",
+    "showWatermarkDesc": "Erekana inyandiko yihariye ku mashusho.",
+    "customWatermark": "Inyandiko y'Ikimenyetso yihariye",
+    "customWatermarkDesc": "Andika inyandiko yo kwerekana. Siga ubusa kugirango ukoreshe imeri yawe.",
+    "customWatermarkPlaceholder": "Urugero: Umutungo wa NV & NE ltd",
     "defaultPlaybackSpeed": "Umuvuduko w'Ibanze wo Gukina",
     "defaultPlaybackSpeedDesc": "Shyiraho umuvuduko w'ibanze w'amashusho n'amajwi.",
     "dataManagement": "Gucunga Amakuru",
@@ -129,26 +121,4 @@
     "summaryText": "Iyi porogaramu ni porogaramu y'urubuga igezweho kandi y'ubuhanga ikora nk'uburyo bwite kandi bw'umutekano bwo gucunga amashusho bukorerwa mu ikoresha ryawe. Ni {creator} development Software aho abakoresha bashobora kwiyandikisha, kwinjira, gucunga isomero ryabo ryite ry'amashusho, no gukoresha ubwenge bw'ubukorano bukomeye mu gusesengura no gusubiza ibibazo ku bikubiye mu mashusho.",
     "featuresTitle": "Ibintu by'ingenzi",
     "featureAuth": "Kwemeza k'umukoresha mu mutekano: Harimo kwiyandikisha kuzuye, kwinjira, n'inzira yo kwemeza imeri hamwe na \"Nyibuka\" no gusohoka.",
-    "featureMediaManagement": "Gucunga amashusho mu buryo bukomeye: Ikoresha IndexedDB y'ikoresha ryawe kugirango ibike amashusho mu buryo bwihuse, bwite, kandi bukora offline. Uburyo bworoshye bwo gushyiramo amashusho bwo gukurura no gutereka.",
-    "featurePlayer": "Umukinnyi w'amashusho w'ubuhanga: Ufite umukinnyi wihariye n'uburyo bwa Sinema butanga isura nziza y'inyuma y'amabara y'ishusho.",
-    "featureAI": "Isesengura ry'amashusho rikoreshejwe na AI: Igice gikomeye cyane cya porogaramu. Ushobora kubaza AI incamake y'ishusho cyangwa kubaza ibibazo byihariye ku biyikubiyemo. Porogaramu yohereza amakuru y'ishusho mu mutekano kuri moderi y'ubwenge bw'ubukorano kugirango isesengure.",
-    "featureShare": "Uburyo bworoshye bwo gusangiza: Ako kanya kora umuhuza wo gusangiza cyangwa kode yo gushyiramo ya HTML <iframe> ku ishusho iyo ari yo yose. Icyitonderwa, ibi ni iby'igihe gito kandi bishingiye kuri sesiyo.",
-    "featureWatermark": "Ikimenyetso cy'amazi gihindagurika: Ikimenyetso cyoroheje kandi kigenda cy'izina ryawe ry'ukoresha gishobora kwerekanwa ku mashusho yawe. Gishobora guhindurwa mu igenamiterere.",
-    "featureSettings": "Igenamiterere ry'umukoresha ryihariye: Hindura uburambe bwawe uhindura uburyo bwijimye, gusubiramo amashusho, uburyo bwa Sinema, n'ikimenyetso cy'amazi.",
-    "stackTitle": "Ibyakoreshejwe mu buhanga",
-    "stackFrontend": "Urwego rw'imbere: React hamwe na TypeScript",
-    "stackStyling": "Imiterere: Tailwind CSS",
-    "stackAI": "Guhuza AI: Isesengura rikoreshejwe na AI",
-    "stackStorage": "Ububiko bw'ibanze: IndexedDB (ku madosiye y'amashusho) na LocalStorage (ku makuru y'umukoresha/igenamiterere)",
-    "createdByTitle": "Byakozwe na",
-    "createdByText": "Iyi porogaramu yakozwe ku giti cye na {creator}.",
-    "supportTitle": "Ubufasha & Igenzura",
-    "supportText1": "Iyi porogaramu n'ibiyigize byose bigenzurwa kandi bicungwa na {creator}.",
-    "supportText2": "Ku bibazo byose by'ubufasha, ibibazo, cyangwa ibyo ushaka kumenya, nyamuneka twandikire kuri imeri yacu y'igenzura: {email}.",
-    "troubleshootingTitle": "Gukemura ibibazo",
-    "troubleshootingIntro": "Niba uhuye n'ibibazo, nyamuneka gerageza intambwe zikurikira mbere:",
-    "troubleUpload": "Gushyiramo amashusho byananiranye: Emeza ko ukoresha uburyo busanzwe bw'amashusho (nka MP4 cyangwa WebM) kandi ko ikoresha ryawe rifite umwanya uhagije.",
-    "troubleAI": "Ikosa mu isesengura rya AI: Reba interineti yawe. Urufunguzo rwa API rwa serivisi ya AI rugomba kuba rwateguwe neza mu bidukikije bya porogaramu kugirango iki gice gikore.",
-    "troubleGeneral": "Ibibazo rusange: Gerageza gufungura urupapuro nanone cyangwa gusukura cache y'ikoresha ryawe kuri uru rubuga."
-  }
-}
+    "featureMediaManagement": "Gucunga amashusho mu buryo bukomeye: Ikoresha Indexed

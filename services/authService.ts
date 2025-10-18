@@ -58,17 +58,6 @@ export const authService = {
     });
   },
 
-  resendVerificationCode: (email: string): Promise<{ success: boolean; message: string }> => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        console.log(`Simulating resending verification code to: ${email}`);
-        // In a real app, this would trigger an email service.
-        // For this demo, we just confirm the action was initiated.
-        resolve({ success: true, message: 'A new verification code has been sent.' });
-      }, 500);
-    });
-  },
-
   login: (email: string, password: string, rememberMe: boolean): Promise<{ success: boolean; message: string; user?: User }> => {
     return new Promise((resolve) => {
       setTimeout(() => {

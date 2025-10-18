@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { authService, User } from '../services/authService';
 import { Logo } from './icons/Logo';
 import { SpinnerIcon } from './icons/SpinnerIcon';
-import VerificationModal from './VerificationModal';
 import { EyeIcon } from './icons/EyeIcon';
 import { EyeSlashIcon } from './icons/EyeSlashIcon';
 import LanguageSwitcher from './LanguageSwitcher';
@@ -24,7 +23,6 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
-  const [showVerification, setShowVerification] = useState(false);
 
   useEffect(() => {
     if (mode === 'login') {
@@ -49,36 +47,35 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
       } else {
         setError(t(result.message));
       }
+      setIsLoading(false);
     } else { // signup
-      setShowVerification(true);
+      const signupResult = await authService.signup(email, password);
+      if (signupResult.success) {
+        // After successful signup, log the user in directly.
+        const loginResult = await authService.login(email, password, rememberMe);
+        if (loginResult.success && loginResult.user) {
+          onLogin(loginResult.user);
+          return; // The component will unmount, no need to set loading to false.
+        } else {
+          // This is an edge case: signup worked but login failed.
+          setError(t('auth.errorLoginAfterSignup'));
+          setMode('login'); // Fallback to login screen so they can try manually.
+        }
+      } else {
+        setError(t(signupResult.message));
+      }
+      setIsLoading(false);
     }
-    setIsLoading(false);
-  };
-  
-  const handleVerificationSuccess = async () => {
-    setShowVerification(false);
-    setIsLoading(true);
-    const result = await authService.signup(email, password);
-    if(result.success) {
-        setSuccessMessage(t(result.message));
-        setMode('login'); // Switch to login tab after successful signup
-        setPassword('');
-    } else {
-        setError(t(result.message));
-    }
-    setIsLoading(false);
-  }
-
-  const handleResendCode = async () => {
-    await authService.resendVerificationCode(email);
-    // The modal itself will display a success message.
   };
 
   const switchMode = (newMode: AuthMode) => {
     setMode(newMode);
     setError('');
     setSuccessMessage('');
-    setEmail('');
+    // Keep email when switching from signup to login after success
+    if (newMode !== 'login') {
+      setEmail('');
+    }
     setPassword('');
     setRememberMe(false);
     setShowPassword(false);
@@ -92,13 +89,13 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
         <div className="w-full max-w-md">
             <header className="text-center mb-8">
                 <div className="flex items-center justify-center gap-3 mb-4 opacity-0 animate-fade-in-up" style={{ animationDelay: '100ms' }}>
-                    <Logo className="w-16 h-auto" />
-                    <h1 className="text-4xl sm:text-5xl font-bold tracking-tight bg-gradient-to-r from-cyan-500 to-blue-500 text-transparent bg-clip-text">
-                        NV & NE ltd
+                    <Logo className="w-24 h-auto" />
+                    <h1 className="text-5xl sm:text-6xl font-bold tracking-tight bg-gradient-to-r from-cyan-500 to-blue-500 text-transparent bg-clip-text">
+                        {t('home.title')}
                     </h1>
                 </div>
-                <p className="text-lg text-gray-600 dark:text-gray-400 opacity-0 animate-fade-in-up" style={{ animationDelay: '300ms' }}>
-                    {t('auth.greeting')}
+                <p className="text-lg text-gray-600 dark:text-gray-400 max-w-xl mx-auto opacity-0 animate-fade-in-up" style={{ animationDelay: '300ms' }}>
+                    {t('home.subtitle')}
                 </p>
             </header>
             
@@ -157,24 +154,21 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
                         </div>
                     </div>
                     
-                    {mode === 'login' && (
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center">
-                                <input
-                                id="remember-me"
-                                name="remember-me"
-                                type="checkbox"
-                                checked={rememberMe}
-                                onChange={(e) => setRememberMe(e.target.checked)}
-                                className="h-4 w-4 text-cyan-600 focus:ring-cyan-500 border-gray-300 dark:border-gray-600 rounded bg-gray-50 dark:bg-gray-700"
-                                />
-                                <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900 dark:text-gray-300">
-                                {t('auth.rememberMe')}
-                                </label>
-                            </div>
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center">
+                            <input
+                            id="remember-me"
+                            name="remember-me"
+                            type="checkbox"
+                            checked={rememberMe}
+                            onChange={(e) => setRememberMe(e.target.checked)}
+                            className="h-4 w-4 text-cyan-600 focus:ring-cyan-500 border-gray-300 dark:border-gray-600 rounded bg-gray-50 dark:bg-gray-700"
+                            />
+                            <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900 dark:text-gray-300">
+                            {t('auth.rememberMe')}
+                            </label>
                         </div>
-                    )}
-
+                    </div>
 
                     {error && <p className="text-sm text-red-500 text-center">{error}</p>}
                     {successMessage && <p className="text-sm text-green-500 text-center">{successMessage}</p>}
@@ -190,13 +184,6 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
                 </form>
             </main>
         </div>
-        <VerificationModal 
-            isOpen={showVerification}
-            onClose={() => setShowVerification(false)}
-            onVerify={handleVerificationSuccess}
-            onResend={handleResendCode}
-            email={email}
-        />
     </div>
   );
 };

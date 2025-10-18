@@ -19,19 +19,8 @@
     "logIn": "Log In",
     "errorUserExists": "User with this email already exists.",
     "errorInvalidCredentials": "Invalid email or password.",
-    "successSignup": "Signup successful. Please log in."
-  },
-  "verification": {
-    "title": "Verify your email",
-    "description": "A verification code has been sent to {email}. Please enter the code below to complete your registration.",
-    "demoCode": "(For this demo, the code is: {code})",
-    "codeLabel": "Verification Code",
-    "codePlaceholder": "_ _ _ _ _ _",
-    "errorInvalidCode": "Invalid verification code. Please try again.",
-    "verifyButton": "Verify & Create Account",
-    "resendCooldown": "You can resend the code in {seconds} seconds.",
-    "resendLink": "Didn't receive a code? Resend",
-    "resendSuccess": "A new code has been sent."
+    "successSignup": "Signup successful! Redirecting...",
+    "errorLoginAfterSignup": "Account created, but auto-login failed. Please log in manually."
   },
   "main": {
     "welcomeBack": "Welcome back!",
@@ -115,7 +104,10 @@
     "performanceMode": "Performance Mode",
     "performanceModeDesc": "Reduces effects and quality to improve speed.",
     "showWatermark": "Show Watermark",
-    "showWatermarkDesc": "Display your name on videos.",
+    "showWatermarkDesc": "Display a watermark on videos.",
+    "customWatermark": "Custom Watermark Text",
+    "customWatermarkDesc": "Enter text to display. Leave blank to use your email.",
+    "customWatermarkPlaceholder": "e.g., Property of NV & NE ltd",
     "defaultPlaybackSpeed": "Default Playback Speed",
     "defaultPlaybackSpeedDesc": "Set the default speed for videos and audio.",
     "dataManagement": "Data Management",
