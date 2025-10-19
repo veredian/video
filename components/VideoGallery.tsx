@@ -372,24 +372,23 @@ const MediaGallery: React.FC<MediaGalleryProps> = ({ media, onSelectMedia, onUpl
                 return (
                     <div key={categoryKey}>
                         <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">{categoryTitles[categoryKey]}</h3>
-                        <div className="media-section-container flex gap-4 pb-4 -mb-4 overflow-x-auto">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-4 gap-y-8">
                             {items.map(item => (
-                                <div key={item.id} className="flex-shrink-0 w-2/5 sm:w-1/4 md:w-1/5 lg:w-1/6">
-                                     <MediaThumbnail
-                                        mediaItem={item}
-                                        onSelect={() => onSelectMedia(item)}
-                                        onDelete={(e) => {
-                                            e.stopPropagation();
-                                            if (window.confirm(t('main.confirmDelete'))) {
-                                                onDeleteMedia(item.id);
-                                            }
-                                        }}
-                                        isSelectMode={isSelectMode}
-                                        isSelected={selectedItems.has(item.id)}
-                                        onToggleSelect={() => handleToggleItemSelection(item.id)}
-                                        performanceMode={performanceMode}
-                                    />
-                                </div>
+                                 <MediaThumbnail
+                                    key={item.id}
+                                    mediaItem={item}
+                                    onSelect={() => onSelectMedia(item)}
+                                    onDelete={(e) => {
+                                        e.stopPropagation();
+                                        if (window.confirm(t('main.confirmDelete'))) {
+                                            onDeleteMedia(item.id);
+                                        }
+                                    }}
+                                    isSelectMode={isSelectMode}
+                                    isSelected={selectedItems.has(item.id)}
+                                    onToggleSelect={() => handleToggleItemSelection(item.id)}
+                                    performanceMode={performanceMode}
+                                />
                             ))}
                         </div>
                     </div>

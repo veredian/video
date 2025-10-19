@@ -4,63 +4,80 @@ import { Logo } from './icons/Logo';
 import { SpinnerIcon } from './icons/SpinnerIcon';
 import { EyeIcon } from './icons/EyeIcon';
 import { EyeSlashIcon } from './icons/EyeSlashIcon';
+import { EmailIcon } from './icons/EmailIcon';
+import { PhoneIcon } from './icons/PhoneIcon';
 import LanguageSwitcher from './LanguageSwitcher';
 import { useTranslation } from '../i18n/LanguageContext';
+import VerificationModal from './VerificationModal';
 
 interface AuthPageProps {
   onLogin: (user: User) => void;
 }
 
 type AuthMode = 'login' | 'signup';
+type AuthMethod = 'email' | 'phone';
+
+const isEmail = (identifier: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(identifier);
+};
 
 const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
   const { t } = useTranslation();
   const [mode, setMode] = useState<AuthMode>('login');
-  const [email, setEmail] = useState('');
+  const [authMethod, setAuthMethod] = useState<AuthMethod>('email');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [isVerificationOpen, setIsVerificationOpen] = useState(false);
 
   useEffect(() => {
-    if (mode === 'login') {
-      const rememberedEmail = authService.getRememberedUser();
-      if (rememberedEmail) {
-        setEmail(rememberedEmail);
+    const remembered = authService.getRememberedUser();
+    if (remembered) {
+        if (isEmail(remembered)) {
+            setAuthMethod('email');
+        } else {
+            setAuthMethod('phone');
+        }
+        setIdentifier(remembered);
         setRememberMe(true);
-      }
     }
-  }, [mode]);
+  }, []);
 
   const handleAuthAction = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
     setSuccessMessage('');
+    
+    if (authMethod === 'phone' && !/^\+?[0-9\s-]{7,}$/.test(identifier)) {
+        setError(t('auth.errorInvalidPhone'));
+        setIsLoading(false);
+        return;
+    }
 
     if (mode === 'login') {
-      const result = await authService.login(email, password, rememberMe);
+      const result = await authService.login(identifier, password, rememberMe);
       if (result.success && result.user) {
         onLogin(result.user);
       } else {
         setError(t(result.message));
+        setIsLoading(false);
       }
-      setIsLoading(false);
     } else { // signup
-      const signupResult = await authService.signup(email, password);
+      const signupResult = await authService.signup(identifier, password);
       if (signupResult.success) {
-        // After successful signup, log the user in directly.
-        const loginResult = await authService.login(email, password, rememberMe);
-        if (loginResult.success && loginResult.user) {
-          onLogin(loginResult.user);
-          return; // The component will unmount, no need to set loading to false.
-        } else {
-          // This is an edge case: signup worked but login failed.
-          setError(t('auth.errorLoginAfterSignup'));
-          setMode('login'); // Fallback to login screen so they can try manually.
-        }
+        setSuccessMessage(t(signupResult.message));
+        const adminEmail = "macksonbyiringiro2@gmail.com";
+        console.log(`Simulating notification to ${adminEmail}: New user signed up with ${authMethod}: ${identifier}`);
+        setTimeout(() => {
+            setSuccessMessage('');
+            setIsVerificationOpen(true);
+        }, 1500);
       } else {
         setError(t(signupResult.message));
       }
@@ -68,18 +85,38 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
     }
   };
 
+  const handleVerificationSuccess = async () => {
+    setIsVerificationOpen(false);
+    setIsLoading(true);
+    // Now log the user in after successful verification
+    const result = await authService.login(identifier, password, rememberMe);
+    if (result.success && result.user) {
+        onLogin(result.user);
+    } else {
+        setError(t(result.message) || 'Login failed after verification.');
+        setMode('login'); // Switch to login mode if auto-login fails
+    }
+    setIsLoading(false);
+  };
+
+  const handleResendCode = () => {
+      console.log(`Simulating resending verification code to ${identifier}`);
+  };
+
   const switchMode = (newMode: AuthMode) => {
     setMode(newMode);
     setError('');
     setSuccessMessage('');
-    // Keep email when switching from signup to login after success
-    if (newMode !== 'login') {
-      setEmail('');
-    }
     setPassword('');
     setRememberMe(false);
     setShowPassword(false);
-  }
+  };
+
+  const switchAuthMethod = (method: AuthMethod) => {
+    setAuthMethod(method);
+    setIdentifier('');
+    setError('');
+  };
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-white flex flex-col items-center justify-center p-4 font-sans">
@@ -110,18 +147,29 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
                 </div>
 
                 <form onSubmit={handleAuthAction} className="space-y-6">
+                    <div className="flex gap-2 p-1 bg-gray-200/50 dark:bg-gray-900/50 rounded-lg">
+                        <button type="button" onClick={() => switchAuthMethod('email')} className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-colors duration-200 ${authMethod === 'email' ? 'bg-cyan-500 text-white' : 'bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300'}`}>
+                           <EmailIcon className="w-5 h-5" /> {t('auth.email')}
+                        </button>
+                        <button type="button" onClick={() => switchAuthMethod('phone')} className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-colors duration-200 ${authMethod === 'phone' ? 'bg-cyan-500 text-white' : 'bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300'}`}>
+                           <PhoneIcon className="w-5 h-5" /> {t('auth.phone')}
+                        </button>
+                    </div>
+
                     <div>
-                        <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('auth.emailLabel')}</label>
+                        <label htmlFor="identifier" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            {authMethod === 'email' ? t('auth.emailLabel') : t('auth.phoneLabel')}
+                        </label>
                         <input
-                            id="email"
-                            name="email"
-                            type="email"
-                            autoComplete="email"
+                            id="identifier"
+                            name="identifier"
+                            type={authMethod === 'email' ? 'email' : 'tel'}
+                            autoComplete={authMethod === 'email' ? 'email' : 'tel'}
                             required
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
+                            value={identifier}
+                            onChange={(e) => setIdentifier(e.target.value)}
                             className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-cyan-500 focus:border-cyan-500"
-                            placeholder={t('auth.emailPlaceholder')}
+                            placeholder={authMethod === 'email' ? t('auth.emailPlaceholder') : t('auth.phonePlaceholder')}
                         />
                     </div>
                     <div>
@@ -184,6 +232,13 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
                 </form>
             </main>
         </div>
+        <VerificationModal
+          isOpen={isVerificationOpen}
+          onClose={() => setIsVerificationOpen(false)}
+          onVerify={handleVerificationSuccess}
+          onResend={handleResendCode}
+          identifier={identifier}
+        />
     </div>
   );
 };

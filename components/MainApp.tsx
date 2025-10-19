@@ -21,6 +21,7 @@ import LanguageSwitcher from './LanguageSwitcher';
 import { useTranslation } from '../i18n/LanguageContext';
 import { ThumbsUpIcon } from './icons/ThumbsUpIcon';
 import { ShareIcon } from './icons/ShareIcon';
+import MiniPlayer from './MiniPlayer';
 
 interface MainAppProps {
     user: User;
@@ -31,25 +32,42 @@ interface MainAppProps {
 
 const THEMES: Settings['theme'][] = ['light', 'dark', 'sunset', 'ocean', 'space'];
 
+interface SelectedMediaState {
+    data: MediaData;
+    initialTime?: number;
+    autoPlay?: boolean;
+}
+
+interface MiniPlayerState {
+    data: MediaData;
+    currentTime: number;
+    isPlaying: boolean;
+}
+
 const MainApp: React.FC<MainAppProps> = ({ user, onLogout, settings, onSettingsChange }) => {
   const { t } = useTranslation();
   const [media, setMedia] = useState<MediaData[]>(user.media);
-  const [selectedMedia, setSelectedMedia] = useState<MediaData | null>(null);
+  const [selectedMedia, setSelectedMedia] = useState<SelectedMediaState | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [activeInfoTab, setActiveInfoTab] = useState<'share' | 'ai'>('share');
+  const [miniPlayerMedia, setMiniPlayerMedia] = useState<MiniPlayerState | null>(null);
 
-  const handleMediaUpload = useCallback(async (mediaFile: File) => {
+  const handleMediaUpload = useCallback(async (mediaFile: File): Promise<() => void> => {
     const updatedUser = await authService.addMediaForCurrentUser(mediaFile);
     const newMedia = updatedUser.media[updatedUser.media.length - 1];
-    setMedia(updatedUser.media);
-    setSelectedMedia(newMedia);
-    setIsUploading(false);
+    
+    return () => {
+        setMedia(updatedUser.media);
+        setSelectedMedia({ data: newMedia });
+        setIsUploading(false);
+    };
   }, []);
 
   const handleSelectMedia = useCallback((mediaItem: MediaData) => {
-    setSelectedMedia(mediaItem);
+    setMiniPlayerMedia(null);
+    setSelectedMedia({ data: mediaItem });
   }, []);
 
   const handleBackToGallery = useCallback(() => {
@@ -60,7 +78,7 @@ const MainApp: React.FC<MainAppProps> = ({ user, onLogout, settings, onSettingsC
     try {
         const updatedUser = await authService.deleteMediaForCurrentUser(mediaId);
         setMedia(updatedUser.media);
-        if(selectedMedia?.id === mediaId) {
+        if(selectedMedia?.data.id === mediaId) {
             setSelectedMedia(null);
         }
     } catch (error) {
@@ -93,12 +111,12 @@ const MainApp: React.FC<MainAppProps> = ({ user, onLogout, settings, onSettingsC
 
     const createUrl = async () => {
       try {
-        const blob = await mediaDBService.getMedia(selectedMedia.id);
+        const blob = await mediaDBService.getMedia(selectedMedia.data.id);
         if (isMounted && blob) {
             objectUrl = URL.createObjectURL(blob);
             setMediaUrlForRender(objectUrl);
         } else if (isMounted) {
-            console.error(`Media with id ${selectedMedia.id} not found in DB.`);
+            console.error(`Media with id ${selectedMedia.data.id} not found in DB.`);
             setMediaUrlForRender(null);
             alert("Error: Could not load media file. It may have been deleted.");
             setSelectedMedia(null);
@@ -126,7 +144,7 @@ const MainApp: React.FC<MainAppProps> = ({ user, onLogout, settings, onSettingsC
 
     const link = document.createElement('a');
     link.href = mediaUrlForRender;
-    link.download = String(selectedMedia.name);
+    link.download = String(selectedMedia.data.name);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -137,13 +155,32 @@ const MainApp: React.FC<MainAppProps> = ({ user, onLogout, settings, onSettingsC
     const nextIndex = (currentIndex + 1) % THEMES.length;
     onSettingsChange({ ...settings, theme: THEMES[nextIndex] });
   };
+  
+  const handleMinimize = (currentTime: number, isPlaying: boolean) => {
+    if (selectedMedia) {
+        setMiniPlayerMedia({ data: selectedMedia.data, currentTime, isPlaying });
+        setSelectedMedia(null);
+    }
+  };
 
-  const watermarkText = settings.watermarkText || user.email;
+  const handleRestoreMiniPlayer = (currentTime: number, isPlaying: boolean) => {
+      if (miniPlayerMedia) {
+          setSelectedMedia({ data: miniPlayerMedia.data, initialTime: currentTime, autoPlay: isPlaying });
+          setMiniPlayerMedia(null);
+      }
+  };
+
+  const handleCloseMiniPlayer = () => {
+      setMiniPlayerMedia(null);
+  };
+
+  const userIdentifier = user.email || user.phone || 'User';
+  const watermarkText = settings.watermarkText || userIdentifier;
 
   const renderContent = () => {
     if (selectedMedia && mediaUrlForRender) {
-        const uploadDate = new Date(parseInt(selectedMedia.id, 10));
-        const simulatedViews = (parseInt(selectedMedia.id.slice(-4), 10) % 100) * 17 + 25; // pseudo-random views
+        const uploadDate = new Date(parseInt(selectedMedia.data.id, 10));
+        const simulatedViews = (parseInt(selectedMedia.data.id.slice(-4), 10) % 100) * 17 + 25; // pseudo-random views
         return (
             <div>
               <div className="mb-4">
@@ -157,24 +194,27 @@ const MainApp: React.FC<MainAppProps> = ({ user, onLogout, settings, onSettingsC
                   </button>
                   <div className="w-full">
                       <MediaPlayer 
-                          key={selectedMedia.id}
+                          key={selectedMedia.data.id}
                           src={mediaUrlForRender} 
-                          mediaType={selectedMedia.mediaType}
-                          fileName={selectedMedia.name}
-                          mimeType={selectedMedia.type}
+                          mediaType={selectedMedia.data.mediaType}
+                          fileName={selectedMedia.data.name}
+                          mimeType={selectedMedia.data.type}
                           loop={settings.loopVideo} 
                           cinemaMode={settings.cinemaMode}
                           showWatermark={settings.showWatermark}
                           watermarkText={watermarkText}
                           defaultPlaybackSpeed={settings.defaultPlaybackSpeed}
                           performanceMode={settings.performanceMode}
+                          onMinimize={handleMinimize}
+                          initialTime={selectedMedia.initialTime}
+                          autoPlay={selectedMedia.autoPlay}
                       />
                   </div>
               </div>
 
               <div className="mt-4">
-                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white" title={selectedMedia.name}>
-                      {selectedMedia.name}
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white" title={selectedMedia.data.name}>
+                      {selectedMedia.data.name}
                   </h2>
                   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mt-2 gap-2">
                       <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -202,7 +242,7 @@ const MainApp: React.FC<MainAppProps> = ({ user, onLogout, settings, onSettingsC
                           <button
                               onClick={() => {
                                   if (window.confirm(t('main.confirmDelete'))) {
-                                      handleDeleteMedia(selectedMedia.id);
+                                      handleDeleteMedia(selectedMedia.data.id);
                                   }
                               }}
                               className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-full transition-colors duration-300 shadow-lg shadow-red-500/20"
@@ -224,9 +264,9 @@ const MainApp: React.FC<MainAppProps> = ({ user, onLogout, settings, onSettingsC
                 </div>
                  <div className="bg-gray-100 dark:bg-gray-900/50 p-4 rounded-lg min-h-[200px]">
                     {activeInfoTab === 'share' ? (
-                        <ShareOptions mediaUrl={mediaUrlForRender} fileName={selectedMedia.name} mediaType={selectedMedia.mediaType} />
+                        <ShareOptions mediaUrl={mediaUrlForRender} fileName={selectedMedia.data.name} mediaType={selectedMedia.data.mediaType} />
                     ) : (
-                        <AskAiPanel media={selectedMedia} />
+                        <AskAiPanel media={selectedMedia.data} />
                     )}
                  </div>
               </div>
@@ -260,7 +300,7 @@ const MainApp: React.FC<MainAppProps> = ({ user, onLogout, settings, onSettingsC
                   <LanguageSwitcher />
                 </div>
                 <div className="text-right">
-                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate max-w-[150px] sm:max-w-xs" title={user.email}>{user.email}</p>
+                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate max-w-[150px] sm:max-w-xs" title={userIdentifier}>{userIdentifier}</p>
                     <p className="text-xs text-gray-500 dark:text-gray-400">{t('main.welcomeBack')}</p>
                 </div>
                  <button 
@@ -288,7 +328,7 @@ const MainApp: React.FC<MainAppProps> = ({ user, onLogout, settings, onSettingsC
         </header>
 
         <main className={`${selectedMedia ? '' : 'bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm rounded-2xl shadow-2xl shadow-cyan-500/10 p-6 sm:p-8 border border-gray-300 dark:border-gray-700'}`}>
-            <div key={selectedMedia ? selectedMedia.id : 'gallery'} className="opacity-0 animate-fade-in-up">
+            <div key={selectedMedia ? selectedMedia.data.id : 'gallery'} className="opacity-0 animate-fade-in-up">
               {renderContent()}
             </div>
         </main>
@@ -300,11 +340,22 @@ const MainApp: React.FC<MainAppProps> = ({ user, onLogout, settings, onSettingsC
 
       <button
         onClick={() => setIsHelpOpen(true)}
-        className="fixed bottom-6 right-6 sm:bottom-8 sm:right-8 z-40 w-14 h-14 bg-gradient-to-r from-cyan-400 to-blue-500 text-white rounded-full flex items-center justify-center shadow-lg hover:scale-110 transform transition-transform duration-200"
+        className="fixed bottom-6 left-6 sm:bottom-8 sm:left-8 z-40 w-14 h-14 bg-gradient-to-r from-cyan-400 to-blue-500 text-white rounded-full flex items-center justify-center shadow-lg hover:scale-110 transform transition-transform duration-200"
         aria-label="Open help and about modal"
       >
         <QuestionMarkIcon className="w-8 h-8" />
       </button>
+
+      {miniPlayerMedia && (
+        <MiniPlayer
+            key={miniPlayerMedia.data.id}
+            media={miniPlayerMedia.data}
+            initialTime={miniPlayerMedia.currentTime}
+            isPlaying={miniPlayerMedia.isPlaying}
+            onRestore={handleRestoreMiniPlayer}
+            onClose={handleCloseMiniPlayer}
+        />
+      )}
 
       <SettingsModal 
         isOpen={isSettingsOpen}

@@ -7,20 +7,25 @@ interface VerificationModalProps {
   onClose: () => void;
   onVerify: () => void;
   onResend: () => void;
-  email: string;
+  identifier: string;
 }
 
 const SIMULATED_CODE = "123456";
 const INITIAL_COOLDOWN = 30;
 const RESEND_COOLDOWN = 60;
 
+const isEmail = (identifier: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(identifier);
+};
 
-const VerificationModal: React.FC<VerificationModalProps> = ({ isOpen, onClose, onVerify, onResend, email }) => {
+const VerificationModal: React.FC<VerificationModalProps> = ({ isOpen, onClose, onVerify, onResend, identifier }) => {
   const { t } = useTranslation();
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
   const [resendCooldown, setResendCooldown] = useState(INITIAL_COOLDOWN);
   const [resendMessage, setResendMessage] = useState('');
+  const [isEmailIdentifier, setIsEmailIdentifier] = useState(true);
 
   useEffect(() => {
     if (isOpen) {
@@ -28,8 +33,9 @@ const VerificationModal: React.FC<VerificationModalProps> = ({ isOpen, onClose, 
       setError('');
       setResendCooldown(INITIAL_COOLDOWN);
       setResendMessage('');
+      setIsEmailIdentifier(isEmail(identifier));
     }
-  }, [isOpen]);
+  }, [isOpen, identifier]);
 
   useEffect(() => {
     if (isOpen && resendCooldown > 0) {
@@ -62,6 +68,8 @@ const VerificationModal: React.FC<VerificationModalProps> = ({ isOpen, onClose, 
     setError(''); // Clear previous errors
   };
 
+  const descriptionKey = isEmailIdentifier ? 'verification.description' : 'verification.descriptionPhone';
+
   return (
     <div 
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
@@ -87,7 +95,7 @@ const VerificationModal: React.FC<VerificationModalProps> = ({ isOpen, onClose, 
 
         <div className="space-y-4">
             <p className="text-sm text-gray-600 dark:text-gray-400">
-                {t('verification.description', { email: email })}
+                {t(descriptionKey, { identifier: identifier })}
             </p>
             <p className="text-xs text-center p-2 rounded-md bg-cyan-500/10 text-cyan-700 dark:text-cyan-300">
                 {t('verification.demoCode', { code: SIMULATED_CODE })}

@@ -10,6 +10,8 @@ import { SpinnerIcon } from './icons/SpinnerIcon';
 import { BanIcon } from './icons/BanIcon';
 import { MediaType } from '../services/authService';
 import { useTranslation } from '../i18n/LanguageContext';
+import { PaintBrushIcon } from './icons/PaintBrushIcon';
+import { MinimizeIcon } from './icons/MinimizeIcon';
 
 interface MediaPlayerProps {
   src: string;
@@ -21,6 +23,10 @@ interface MediaPlayerProps {
   showWatermark: boolean;
   watermarkText: string;
   defaultPlaybackSpeed: number;
+  performanceMode: boolean;
+  onMinimize: (currentTime: number, isPlaying: boolean) => void;
+  initialTime?: number;
+  autoPlay?: boolean;
 }
 
 const formatTime = (timeInSeconds: number) => {
@@ -36,28 +42,39 @@ const formatTime = (timeInSeconds: number) => {
 const PLAYBACK_RATES = [0.5, 0.75, 1, 1.25, 1.5, 2];
 
 const MediaPlayer: React.FC<MediaPlayerProps> = ({ 
-    src, mediaType, fileName, loop, cinemaMode, showWatermark, watermarkText, defaultPlaybackSpeed, mimeType
+    src, mediaType, fileName, loop, cinemaMode, showWatermark, watermarkText, defaultPlaybackSpeed, mimeType, performanceMode, onMinimize, initialTime, autoPlay
 }) => {
   const { t } = useTranslation();
-  const [isPlaying, setIsPlaying] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(autoPlay || false);
   const [isMuted, setIsMuted] = useState(true);
   const [volume, setVolume] = useState(1);
   const [playbackRate, setPlaybackRate] = useState(defaultPlaybackSpeed);
   const [duration, setDuration] = useState(0);
-  const [currentTime, setCurrentTime] = useState(0);
+  const [currentTime, setCurrentTime] = useState(initialTime || 0);
   const [isControlsVisible, setIsControlsVisible] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isPipActive, setIsPipActive] = useState(false);
   const [isWaiting, setIsWaiting] = useState(true);
   const [showSpeedMenu, setShowSpeedMenu] = useState(false);
   const [loadError, setLoadError] = useState(false);
+  const [buffered, setBuffered] = useState(0);
+  const [isScrubbing, setIsScrubbing] = useState(false);
+  const [scrubTime, setScrubTime] = useState(0);
+  const [scrubPosition, setScrubPosition] = useState(0);
+  const [visualizerStyle, setVisualizerStyle] = useState<'bars' | 'wave'>('bars');
 
   const mediaRef = useRef<HTMLVideoElement & HTMLAudioElement & HTMLImageElement>(null);
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const visualizerCanvasRef = useRef<HTMLCanvasElement>(null);
   const controlsTimeoutRef = useRef<number | null>(null);
   const seekInputRef = useRef<HTMLInputElement>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
   
+  const isCinemaActive = cinemaMode && !performanceMode;
+
   const handleMediaError = useCallback(() => {
     setIsWaiting(false);
     setLoadError(true);
@@ -66,12 +83,12 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
   const handlePlayPause = useCallback(() => {
     if (mediaRef.current) {
       if (mediaRef.current.paused) {
-        mediaRef.current.play();
+        mediaRef.current.play().catch(handleMediaError);
       } else {
         mediaRef.current.pause();
       }
     }
-  }, []);
+  }, [handleMediaError]);
 
   const hideControls = () => {
     if (isPlaying) {
@@ -113,6 +130,12 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
     const onLoadedMetadata = () => {
       setDuration(mediaElement.duration);
       setIsWaiting(false);
+      if (initialTime) {
+        mediaElement.currentTime = initialTime;
+      }
+      if (autoPlay) {
+        mediaElement.play().catch(handleMediaError);
+      }
     };
     const onCanPlay = () => setIsWaiting(false);
     const onVolumeChange = () => {
@@ -121,6 +144,11 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
     };
     const onWaiting = () => setIsWaiting(true);
     const onPlaying = () => setIsWaiting(false);
+    const onProgress = () => {
+        if (mediaElement.buffered.length > 0) {
+            setBuffered(mediaElement.buffered.end(mediaElement.buffered.length - 1));
+        }
+    };
     const onEnterPiP = () => setIsPipActive(true);
     const onLeavePiP = () => setIsPipActive(false);
 
@@ -133,13 +161,15 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
     mediaElement.addEventListener('volumechange', onVolumeChange);
     mediaElement.addEventListener('waiting', onWaiting);
     mediaElement.addEventListener('playing', onPlaying);
+    mediaElement.addEventListener('progress', onProgress);
     if (mediaType === 'video') {
         mediaElement.addEventListener('enterpictureinpicture', onEnterPiP);
         mediaElement.addEventListener('leavepictureinpicture', onLeavePiP);
     }
     
     mediaElement.playbackRate = playbackRate;
-    mediaElement.currentTime = 0;
+    if (!initialTime) mediaElement.currentTime = 0;
+    
     setIsWaiting(true);
     setLoadError(false);
 
@@ -153,23 +183,129 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
       mediaElement.removeEventListener('volumechange', onVolumeChange);
       mediaElement.removeEventListener('waiting', onWaiting);
       mediaElement.removeEventListener('playing', onPlaying);
+      mediaElement.removeEventListener('progress', onProgress);
       if (mediaType === 'video') {
         mediaElement.removeEventListener('enterpictureinpicture', onEnterPiP);
         mediaElement.removeEventListener('leavepictureinpicture', onLeavePiP);
       }
     };
-  }, [src, duration, playbackRate, mediaType]);
+  }, [src, duration, playbackRate, mediaType, initialTime, autoPlay, handleMediaError]);
+  
+  useEffect(() => {
+    if (mediaType !== 'audio' || !mediaRef.current) return;
+    const audioEl = mediaRef.current;
+    
+    const setupAudioContext = () => {
+        if (audioContextRef.current) audioContextRef.current.close();
+        const context = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const source = context.createMediaElementSource(audioEl);
+        const analyser = context.createAnalyser();
+        analyser.fftSize = 256;
+        source.connect(analyser);
+        analyser.connect(context.destination);
+        audioContextRef.current = context;
+        analyserRef.current = analyser;
+    };
+
+    const handleFirstPlay = () => {
+        if (!audioContextRef.current) setupAudioContext();
+        audioEl.removeEventListener('play', handleFirstPlay);
+    };
+    
+    audioEl.addEventListener('play', handleFirstPlay);
+
+    return () => {
+        audioEl.removeEventListener('play', handleFirstPlay);
+        if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+        if (audioContextRef.current) {
+            audioContextRef.current.close();
+            audioContextRef.current = null;
+        }
+    };
+}, [src, mediaType]);
+
+useEffect(() => {
+    if (mediaType !== 'audio') return;
+    const draw = () => {
+        if (!analyserRef.current || !visualizerCanvasRef.current || !mediaRef.current) {
+            animationFrameRef.current = requestAnimationFrame(draw);
+            return;
+        }
+        const analyser = analyserRef.current;
+        const canvas = visualizerCanvasRef.current;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        const bufferLength = analyser.frequencyBinCount;
+        const dataArray = new Uint8Array(bufferLength);
+        analyser.getByteFrequencyData(dataArray);
+
+        const { width, height } = canvas;
+        ctx.clearRect(0, 0, width, height);
+
+        if (visualizerStyle === 'bars') {
+            const barWidth = (width / bufferLength) * 1.5;
+            let x = 0;
+            for (let i = 0; i < bufferLength; i++) {
+                const barHeight = dataArray[i] / 1.5;
+                const gradient = ctx.createLinearGradient(0, height, 0, height - barHeight);
+                gradient.addColorStop(0, '#3b82f6');
+                gradient.addColorStop(1, '#22d3ee');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(x, height - barHeight, barWidth, barHeight);
+                x += barWidth + 2;
+            }
+        } else if (visualizerStyle === 'wave') {
+            ctx.lineWidth = 3;
+            const gradient = ctx.createLinearGradient(0, 0, width, 0);
+            gradient.addColorStop(0.2, '#3b82f6');
+            gradient.addColorStop(0.8, '#22d3ee');
+            ctx.strokeStyle = gradient;
+            ctx.beginPath();
+            const sliceWidth = width * 1.0 / bufferLength;
+            let x = 0;
+            for (let i = 0; i < bufferLength; i++) {
+                const v = dataArray[i] / 128.0;
+                const y = (v * height) / 2;
+                i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+                x += sliceWidth;
+            }
+            ctx.lineTo(canvas.width, canvas.height / 2);
+            ctx.stroke();
+        }
+        animationFrameRef.current = requestAnimationFrame(draw);
+    };
+
+    if (isPlaying) {
+        if (audioContextRef.current && audioContextRef.current.state === 'suspended') {
+            audioContextRef.current.resume();
+        }
+        if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = requestAnimationFrame(draw);
+    } else {
+        if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+    }
+
+    return () => {
+        if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+    };
+}, [isPlaying, mediaType, visualizerStyle]);
+
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
         const target = e.target as HTMLElement;
         if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
+
+        const media = mediaRef.current;
+        if (!media) return;
+
         switch (e.code) {
             case 'Space': if (mediaType !== 'image') { e.preventDefault(); handlePlayPause(); } break;
             case 'KeyM': if (mediaType !== 'image') toggleMute(); break;
             case 'KeyF': if (mediaType === 'video') toggleFullscreen(); break;
-            case 'ArrowLeft': if (mediaType !== 'image') seek(-5); break;
-            case 'ArrowRight': if (mediaType !== 'image') seek(5); break;
+            case 'ArrowLeft': if (mediaType !== 'image') { e.preventDefault(); media.currentTime -= 5; } break;
+            case 'ArrowRight': if (mediaType !== 'image') { e.preventDefault(); media.currentTime += 5; } break;
             case 'ArrowUp': if (mediaType !== 'image') { e.preventDefault(); setVolume(v => Math.min(v + 0.1, 1)); } break;
             case 'ArrowDown': if (mediaType !== 'image') { e.preventDefault(); setVolume(v => Math.max(v - 0.1, 0)); } break;
         }
@@ -192,9 +328,6 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, []);
 
-  const seek = (delta: number) => {
-      if (mediaRef.current) mediaRef.current.currentTime += delta;
-  };
 
   const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (mediaRef.current) mediaRef.current.currentTime = Number(e.target.value);
@@ -213,15 +346,27 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
 
   const toggleFullscreen = () => {
     if (!playerContainerRef.current) return;
-    if (!document.fullscreenElement) playerContainerRef.current.requestFullscreen();
+    if (!document.fullscreenElement) {
+        playerContainerRef.current.requestFullscreen().catch(err => {
+            console.error(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+        });
+    }
     else document.exitFullscreen();
   };
 
   const togglePiP = () => {
     const videoElement = mediaRef.current as HTMLVideoElement;
     if (!videoElement) return;
-    if(document.pictureInPictureElement) document.exitPictureInPicture();
-    else videoElement.requestPictureInPicture();
+    if(document.pictureInPictureElement) {
+        document.exitPictureInPicture().catch(err => {
+            console.error(`Error attempting to exit picture-in-picture mode: ${err.message} (${err.name})`);
+        });
+    }
+    else {
+        videoElement.requestPictureInPicture().catch(err => {
+            console.error(`Error attempting to enter picture-in-picture mode: ${err.message} (${err.name})`);
+        });
+    }
   };
 
   useEffect(() => {
@@ -232,13 +377,13 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
     if (!ctx) return;
     let animationFrameId: number;
     const renderLoop = () => {
-      if (video.paused || video.ended || !cinemaMode) {
+      if (video.paused || video.ended || !isCinemaActive) {
         ctx.clearRect(0, 0, canvas.width, canvas.height); return;
       }
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       animationFrameId = requestAnimationFrame(renderLoop);
     };
-    if (isPlaying && cinemaMode) {
+    if (isPlaying && isCinemaActive) {
       canvas.width = video.videoWidth / 8;
       canvas.height = video.videoHeight / 8;
       animationFrameId = requestAnimationFrame(renderLoop);
@@ -246,13 +391,31 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
       ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
     return () => cancelAnimationFrame(animationFrameId);
-  }, [isPlaying, cinemaMode, src, mediaType]);
+  }, [isPlaying, src, mediaType, isCinemaActive]);
 
   const handlePlaybackRateChange = (rate: number) => {
     setPlaybackRate(rate);
     if(mediaRef.current) mediaRef.current.playbackRate = rate;
     setShowSpeedMenu(false);
   }
+  
+  const handleSeekBarHover = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!seekInputRef.current || !duration) return;
+    const rect = seekInputRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const width = rect.width;
+    const clampedX = Math.max(0, Math.min(x, width));
+    const percentage = clampedX / width;
+    setScrubTime(percentage * duration);
+    setScrubPosition(clampedX);
+    setIsScrubbing(true);
+  };
+
+  const handleMinimize = () => {
+    if (mediaRef.current) {
+        onMinimize(mediaRef.current.currentTime, !mediaRef.current.paused);
+    }
+  };
 
   const renderPlayer = () => {
     switch (mediaType) {
@@ -265,8 +428,11 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
         );
       case 'audio':
         return (
-            <div className="w-full h-full flex flex-col items-center justify-center bg-gray-900/10 dark:bg-black/20" onClick={(e) => e.stopPropagation()}>
-                 <p className="text-xl font-semibold text-gray-800 dark:text-white truncate max-w-full px-4">{fileName}</p>
+            <div className="w-full h-full flex flex-col items-center justify-center bg-gray-900/10 dark:bg-black/20 relative" onClick={(e) => e.stopPropagation()}>
+                 <canvas ref={visualizerCanvasRef} className="absolute inset-0 w-full h-full opacity-50" />
+                 <div className="relative z-10 text-center">
+                    <p className="text-xl font-semibold text-gray-800 dark:text-white truncate max-w-full px-4">{fileName}</p>
+                 </div>
                  <audio ref={mediaRef} loop={loop} muted={isMuted} playsInline preload="metadata" className="hidden" onError={handleMediaError}>
                     <source src={src} type={mimeType} />
                  </audio>
@@ -282,10 +448,12 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
         return <p>Unsupported media type.</p>;
     }
   };
+  
+  const bufferedPercentage = duration > 0 ? (buffered / duration) * 100 : 0;
 
   return (
     <div ref={playerContainerRef} className={`relative w-full aspect-video bg-black rounded-lg overflow-hidden shadow-lg group ${mediaType !== 'image' ? '' : 'bg-gray-100 dark:bg-gray-900'}`} onMouseMove={showControls} onMouseLeave={hideControls} onClick={mediaType !== 'image' ? handlePlayPause : undefined}>
-       {mediaType === 'video' && <canvas ref={canvasRef} className={`absolute inset-0 w-full h-full transition-opacity duration-500 ${cinemaMode && isPlaying ? 'opacity-60' : 'opacity-0'}`} style={{ filter: 'blur(30px)', transform: 'scale(1.2)' }} />}
+       {mediaType === 'video' && <canvas ref={canvasRef} className={`absolute inset-0 w-full h-full transition-opacity duration-500 ${isCinemaActive && isPlaying ? 'opacity-60' : 'opacity-0'}`} style={{ filter: 'blur(30px)', transform: 'scale(1.2)' }} />}
        
        <div className="relative w-full h-full">
          {renderPlayer()}
@@ -306,7 +474,19 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
 
         {mediaType !== 'image' && !loadError && (
             <div className={`absolute bottom-0 left-0 right-0 z-30 p-3 bg-gradient-to-t from-black/70 to-transparent transition-opacity duration-300 ${isControlsVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} onClick={(e) => e.stopPropagation()}>
-               <div className="flex items-center gap-2">
+               <div className="relative flex items-center gap-2" onMouseMove={handleSeekBarHover} onMouseLeave={() => setIsScrubbing(false)}>
+                {isScrubbing && (
+                    <div 
+                        className="absolute bottom-full mb-2 px-2 py-1 bg-black/80 text-white text-xs font-bold rounded-md pointer-events-none transform -translate-x-1/2"
+                        style={{ left: `${scrubPosition}px` }}
+                    >
+                        {formatTime(scrubTime)}
+                    </div>
+                )}
+                <div 
+                    className="absolute left-0 top-1/2 -translate-y-1/2 h-[0.35rem] bg-white/60 rounded-full pointer-events-none"
+                    style={{ width: `${bufferedPercentage}%` }}
+                />
                 <input ref={seekInputRef} type="range" min="0" max={duration} value={currentTime} onChange={handleSeek} className="video-range w-full" style={{'--progress': `${(currentTime / duration) * 100}%`} as React.CSSProperties} />
                </div>
                <div className="flex items-center justify-between mt-1 text-white font-medium text-sm">
@@ -337,6 +517,18 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
                             </div>
                         )}
                     </div>
+                    {mediaType === 'audio' && (
+                        <button 
+                            onClick={() => setVisualizerStyle(s => s === 'bars' ? 'wave' : 'bars')} 
+                            className="p-1 hover:scale-110 transition-transform"
+                            aria-label="Change visualizer style"
+                        >
+                            <PaintBrushIcon className="w-6 h-6" />
+                        </button>
+                    )}
+                     <button onClick={handleMinimize} className="p-1 hover:scale-110 transition-transform" aria-label="Minimize player">
+                        <MinimizeIcon className="w-6 h-6" />
+                    </button>
                     {mediaType === 'video' && document.pictureInPictureEnabled && (
                         <button onClick={togglePiP} className="p-1 hover:scale-110 transition-transform">
                            <PictureInPictureIcon className="w-6 h-6" />

@@ -4,7 +4,7 @@ import { SpinnerIcon } from './icons/SpinnerIcon';
 import { useTranslation } from '../i18n/LanguageContext';
 
 interface MediaUploaderProps {
-  onMediaUpload: (mediaFile: File) => void;
+  onMediaUpload: (mediaFile: File) => Promise<() => void>;
 }
 
 const MediaUploader: React.FC<MediaUploaderProps> = ({ onMediaUpload }) => {
@@ -25,7 +25,7 @@ const MediaUploader: React.FC<MediaUploaderProps> = ({ onMediaUpload }) => {
     };
   }, []);
 
-  const handleFile = useCallback(async (file: File | null | undefined) => {
+  const handleFile = useCallback((file: File | null | undefined) => {
     if (isProcessing) return;
 
     if (file && (file.type.startsWith('video/') || file.type.startsWith('audio/') || file.type.startsWith('image/'))) {
@@ -33,19 +33,51 @@ const MediaUploader: React.FC<MediaUploaderProps> = ({ onMediaUpload }) => {
       setFileName(file.name);
       setProgress(0);
       
-      // Simulate processing time
-      progressIntervalRef.current = window.setInterval(() => {
-        setProgress(prev => {
-          if (prev >= 100) {
-            if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
-            setTimeout(() => {
-              onMediaUpload(file);
-            }, 300);
-            return 100;
-          }
-          return prev + 10;
+      let commitUpload: (() => void) | null = null;
+      let uploadError: Error | null = null;
+
+      onMediaUpload(file)
+        .then(commitFn => {
+            commitUpload = commitFn;
+        })
+        .catch(err => {
+            console.error("Upload process failed:", err);
+            uploadError = err;
         });
-      }, 50);
+
+      const fileSize = file.size; // in bytes
+      // Use a simulated speed for the animation duration.
+      const simulatedSpeed = 20 * 1024 * 1024; // 20 MBps
+      // Calculate total duration in milliseconds. Ensure a minimum of 1 second for small files.
+      const totalDuration = Math.max(1000, (fileSize / simulatedSpeed) * 1000);
+      
+      const startTime = Date.now();
+
+      progressIntervalRef.current = window.setInterval(() => {
+        if (uploadError) {
+            if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
+            setIsProcessing(false);
+            setFileName('');
+            setProgress(0);
+            alert(t('uploader.errorUploadFailed'));
+            return;
+        }
+
+        if (commitUpload) {
+          setProgress(100);
+          if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
+          setTimeout(() => {
+            commitUpload!();
+          }, 300); // Brief delay to show 100%
+          return;
+        }
+        
+        const elapsedTime = Date.now() - startTime;
+        // Animate progress up to 99% and wait for the real work to finish.
+        const currentProgress = Math.min(99, (elapsedTime / totalDuration) * 100);
+        setProgress(currentProgress);
+
+      }, 50); // Update progress every 50ms for smooth animation
 
     } else if (file) {
       alert(t('uploader.errorInvalidFile'));

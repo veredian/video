@@ -4,7 +4,8 @@
 import { mediaDBService } from './videoDBService';
 
 export interface User {
-  email: string;
+  email?: string;
+  phone?: string;
   password?: string; // Optional because we don't return it on getCurrentUser
   media: MediaData[];
 }
@@ -42,31 +43,47 @@ const saveUsers = (users: Record<string, User>) => {
   }
 };
 
+const isEmail = (identifier: string): boolean => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(identifier);
+};
+
+
 export const authService = {
-  signup: (email: string, password: string): Promise<{ success: boolean; message: string }> => {
+  signup: (identifier: string, password: string): Promise<{ success: boolean; message: string }> => {
     return new Promise((resolve) => {
       setTimeout(() => {
         const users = getUsers();
-        if (users[email]) {
-          resolve({ success: false, message: 'auth.errorUserExists' });
+        if (users[identifier]) {
+          const message = isEmail(identifier) ? 'auth.errorUserExists' : 'auth.errorPhoneExists';
+          resolve({ success: false, message });
           return;
         }
-        users[email] = { email, password, media: [] };
+        
+        const newUser: User = { password, media: [] };
+        if (isEmail(identifier)) {
+            newUser.email = identifier;
+        } else {
+            newUser.phone = identifier;
+        }
+
+        users[identifier] = newUser;
         saveUsers(users);
-        resolve({ success: true, message: 'auth.successSignup' });
+        const message = isEmail(identifier) ? 'auth.successSignup' : 'auth.successSignupPhone';
+        resolve({ success: true, message });
       }, 500);
     });
   },
 
-  login: (email: string, password: string, rememberMe: boolean): Promise<{ success: boolean; message: string; user?: User }> => {
+  login: (identifier: string, password: string, rememberMe: boolean): Promise<{ success: boolean; message: string; user?: User }> => {
     return new Promise((resolve) => {
       setTimeout(() => {
         const users = getUsers();
-        const user = users[email];
+        const user = users[identifier];
         if (user && user.password === password) {
-          localStorage.setItem(CURRENT_USER_KEY, email);
+          localStorage.setItem(CURRENT_USER_KEY, identifier);
           if (rememberMe) {
-            localStorage.setItem(REMEMBERED_USER_KEY, email);
+            localStorage.setItem(REMEMBERED_USER_KEY, identifier);
           } else {
             localStorage.removeItem(REMEMBERED_USER_KEY);
           }
@@ -88,11 +105,11 @@ export const authService = {
   },
 
   getCurrentUser: (): User | null => {
-    const userEmail = localStorage.getItem(CURRENT_USER_KEY);
-    if (!userEmail) return null;
+    const userIdentifier = localStorage.getItem(CURRENT_USER_KEY);
+    if (!userIdentifier) return null;
 
     const users = getUsers();
-    const user = users[userEmail];
+    const user = users[userIdentifier];
     if (user) {
       const { password, ...userWithoutPassword } = user;
       return userWithoutPassword;
@@ -102,11 +119,11 @@ export const authService = {
   
   addMediaForCurrentUser: (mediaFile: File): Promise<User> => {
     return new Promise(async (resolve, reject) => {
-      const userEmail = localStorage.getItem(CURRENT_USER_KEY);
-      if (!userEmail) return reject(new Error("No user logged in"));
+      const userIdentifier = localStorage.getItem(CURRENT_USER_KEY);
+      if (!userIdentifier) return reject(new Error("No user logged in"));
 
       const users = getUsers();
-      const user = users[userEmail];
+      const user = users[userIdentifier];
       if (user) {
          let mediaType: MediaType;
          if (mediaFile.type.startsWith('video/')) {
@@ -168,11 +185,11 @@ export const authService = {
 
   deleteMediaForCurrentUser: (mediaId: string): Promise<User> => {
     return new Promise(async (resolve, reject) => {
-        const userEmail = localStorage.getItem(CURRENT_USER_KEY);
-        if (!userEmail) return reject(new Error("No user logged in"));
+        const userIdentifier = localStorage.getItem(CURRENT_USER_KEY);
+        if (!userIdentifier) return reject(new Error("No user logged in"));
 
         const users = getUsers();
-        const user = users[userEmail];
+        const user = users[userIdentifier];
         if (user) {
             const mediaIndex = user.media.findIndex(v => v.id === mediaId);
             if (mediaIndex === -1) {
@@ -201,11 +218,11 @@ export const authService = {
   
   clearAllMediaForCurrentUser: (): Promise<User> => {
     return new Promise(async (resolve, reject) => {
-        const userEmail = localStorage.getItem(CURRENT_USER_KEY);
-        if (!userEmail) return reject(new Error("No user logged in"));
+        const userIdentifier = localStorage.getItem(CURRENT_USER_KEY);
+        if (!userIdentifier) return reject(new Error("No user logged in"));
 
         const users = getUsers();
-        const user = users[userEmail];
+        const user = users[userIdentifier];
         if (user) {
             try {
                 await mediaDBService.clearAllMedia();
