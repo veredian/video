@@ -57,24 +57,24 @@ const AskAiPanel: React.FC<AskAiPanelProps> = ({ media }) => {
         },
       };
 
-      let prompt = '';
-      if (media.mediaType === 'video') {
-        prompt = `Identify the main theme or a potential narrative arc of the video titled "${media.name}". Then, list 3-5 key visual elements or scenes that support this theme.`;
-      } else if (media.mediaType === 'image') {
-        prompt = `Analyze the provided image titled "${media.name}". Describe the key objects, colors, composition, and overall mood of the image.`;
-      } else if (media.mediaType === 'audio') {
-        prompt = `Analyze the provided audio file titled "${media.name}". Describe its content: is it speech, music, or something else? If it's speech, provide a brief transcript. If it's music, describe the genre, instruments, and mood.`;
-      }
+      let prompt = question.trim();
 
-      if (question.trim()) {
-        prompt += `\n\nFinally, based on the content, answer the user's specific question: "${question}"`;
+      if (!prompt) {
+        // If no specific question, use a default analysis prompt based on media type
+        if (media.mediaType === 'video') {
+          prompt = `Summarize this video titled "${media.name}". What is it about? Describe the key scenes.`;
+        } else if (media.mediaType === 'image') {
+          prompt = `Analyze this image titled "${media.name}". Describe its subject, composition, color and light, and the overall mood it conveys. Also, suggest one creative caption for social media.`;
+        } else if (media.mediaType === 'audio') {
+          prompt = `Analyze this audio file titled "${media.name}". Is it speech or music? If speech, provide a brief transcript. If music, describe the genre and mood.`;
+        }
       }
 
       const textPart = { text: prompt };
       
       const result = await ai.models.generateContent({
           model: 'gemini-2.5-flash',
-          contents: { parts: [textPart, mediaPart] },
+          contents: { parts: [mediaPart, textPart] },
       });
 
       setResponse(result.text);

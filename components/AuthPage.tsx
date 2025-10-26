@@ -72,7 +72,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
       const signupResult = await authService.signup(identifier, password);
       if (signupResult.success) {
         setSuccessMessage(t(signupResult.message));
-        const adminEmail = "macksonbyiringiro2@gmail.com";
+        const adminEmail = "Macksonbyiringiro2@gmail.com";
         console.log(`Simulating notification to ${adminEmail}: New user signed up with ${authMethod}: ${identifier}`);
         setTimeout(() => {
             setSuccessMessage('');

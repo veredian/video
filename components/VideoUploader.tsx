@@ -5,9 +5,10 @@ import { useTranslation } from '../i18n/LanguageContext';
 
 interface MediaUploaderProps {
   onMediaUpload: (mediaFile: File) => Promise<() => void>;
+  accept?: string;
 }
 
-const MediaUploader: React.FC<MediaUploaderProps> = ({ onMediaUpload }) => {
+const MediaUploader: React.FC<MediaUploaderProps> = ({ onMediaUpload, accept = 'video/*,audio/*,image/*' }) => {
   const { t } = useTranslation();
   const [isDragging, setIsDragging] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -161,7 +162,7 @@ const MediaUploader: React.FC<MediaUploaderProps> = ({ onMediaUpload }) => {
         type="file"
         ref={fileInputRef}
         onChange={handleFileChange}
-        accept="video/*,audio/*,image/*"
+        accept={accept}
         className="hidden"
         aria-hidden="true"
       />

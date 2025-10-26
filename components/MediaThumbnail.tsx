@@ -9,6 +9,9 @@ import { FilmIcon } from './icons/FilmIcon';
 import { CheckCircleIcon } from './icons/CheckCircleIcon';
 import { CircleIcon } from './icons/CircleIcon';
 import { useTranslation } from '../i18n/LanguageContext';
+import { ClockIcon } from './icons/ClockIcon';
+import { ExclamationCircleIcon } from './icons/ExclamationCircleIcon';
+import { CheckIcon } from './icons/CheckIcon';
 
 const renderIcon = (mediaType: MediaType, className: string) => {
     switch (mediaType) {
@@ -170,6 +173,18 @@ const MediaThumbnail: React.FC<MediaThumbnailProps> = ({
                 )}
                 
                 {isSelected && <div className="absolute inset-0 bg-cyan-500/30" aria-hidden="true"></div>}
+
+                {mediaItem.transcriptionStatus && (mediaItem.mediaType === 'video' || mediaItem.mediaType === 'audio') && (
+                    <div className="absolute bottom-1 left-1 z-10 p-0.5 bg-black/50 rounded-full" title={
+                        mediaItem.transcriptionStatus === 'pending' ? t('gallery.transcriptionPending') :
+                        mediaItem.transcriptionStatus === 'failed' ? t('gallery.transcriptionFailed') :
+                        t('gallery.transcriptionCompleted')
+                    }>
+                        {mediaItem.transcriptionStatus === 'pending' && <ClockIcon className="w-4 h-4 text-white" />}
+                        {mediaItem.transcriptionStatus === 'failed' && <ExclamationCircleIcon className="w-4 h-4 text-yellow-300" />}
+                        {mediaItem.transcriptionStatus === 'completed' && <CheckIcon className="w-4 h-4 text-green-400" />}
+                    </div>
+                )}
 
                 {!thumbnailUrl && <SpinnerIcon className="w-8 h-8 text-gray-400 dark:text-gray-500 animate-spin" />}
                 

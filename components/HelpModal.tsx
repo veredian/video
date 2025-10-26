@@ -92,7 +92,7 @@ const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                 </p>
                 <p className="mt-2">
                     {t('help.supportText2', { email: '' })}
-                     <a href="mailto:byiringiromackson2@gmail.com" className="text-cyan-500 hover:underline font-semibold">byiringiromackson2@gmail.com</a>.
+                     <a href="mailto:Macksonbyiringiro2@gmail.com" className="text-cyan-500 hover:underline font-semibold">Macksonbyiringiro2@gmail.com</a>.
                 </p>
             </Section>
 

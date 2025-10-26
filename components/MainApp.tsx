@@ -21,7 +21,9 @@ import LanguageSwitcher from './LanguageSwitcher';
 import { useTranslation } from '../i18n/LanguageContext';
 import { ThumbsUpIcon } from './icons/ThumbsUpIcon';
 import { ShareIcon } from './icons/ShareIcon';
+import { SparklesIcon } from './icons/SparklesIcon';
 import MiniPlayer from './MiniPlayer';
+import { TagIcon } from './icons/TagIcon';
 
 interface MainAppProps {
     user: User;
@@ -53,6 +55,13 @@ const MainApp: React.FC<MainAppProps> = ({ user, onLogout, settings, onSettingsC
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [activeInfoTab, setActiveInfoTab] = useState<'share' | 'ai'>('share');
   const [miniPlayerMedia, setMiniPlayerMedia] = useState<MiniPlayerState | null>(null);
+  const [uploadAcceptType, setUploadAcceptType] = useState('video/*,audio/*,image/*');
+  const [isSplitView, setIsSplitView] = useState(false);
+
+  const handleInitiateUpload = (acceptType: string) => {
+    setUploadAcceptType(acceptType);
+    setIsUploading(true);
+  };
 
   const handleMediaUpload = useCallback(async (mediaFile: File): Promise<() => void> => {
     const updatedUser = await authService.addMediaForCurrentUser(mediaFile);
@@ -62,6 +71,7 @@ const MainApp: React.FC<MainAppProps> = ({ user, onLogout, settings, onSettingsC
         setMedia(updatedUser.media);
         setSelectedMedia({ data: newMedia });
         setIsUploading(false);
+        setUploadAcceptType('video/*,audio/*,image/*'); // Reset to default
     };
   }, []);
 
@@ -72,7 +82,14 @@ const MainApp: React.FC<MainAppProps> = ({ user, onLogout, settings, onSettingsC
 
   const handleBackToGallery = useCallback(() => {
     setSelectedMedia(null);
+    setIsSplitView(false);
   }, []);
+
+  const handleToggleSplitView = useCallback(() => {
+    if (selectedMedia) {
+        setIsSplitView(prev => !prev);
+    }
+  }, [selectedMedia]);
 
   const handleDeleteMedia = useCallback(async (mediaId: string) => {
     try {
@@ -99,6 +116,14 @@ const MainApp: React.FC<MainAppProps> = ({ user, onLogout, settings, onSettingsC
   }, []);
   
   const [mediaUrlForRender, setMediaUrlForRender] = useState<string | null>(null);
+
+  useEffect(() => {
+    // For non-image media, default to the 'share' tab.
+    // The image view no longer uses tabs.
+    if (selectedMedia && selectedMedia.data.mediaType !== 'image') {
+      setActiveInfoTab('share');
+    }
+  }, [selectedMedia]);
 
   useEffect(() => {
     if (!selectedMedia) {
@@ -173,6 +198,49 @@ const MainApp: React.FC<MainAppProps> = ({ user, onLogout, settings, onSettingsC
   const handleCloseMiniPlayer = () => {
       setMiniPlayerMedia(null);
   };
+  
+  const handleLike = useCallback(async () => {
+    if (!selectedMedia) return;
+    try {
+        const updatedUser = await authService.toggleLikeStatus(selectedMedia.data.id);
+        setMedia(updatedUser.media);
+        
+        const updatedMediaItem = updatedUser.media.find(m => m.id === selectedMedia.data.id);
+        if (updatedMediaItem) {
+            setSelectedMedia(prev => prev ? { ...prev, data: updatedMediaItem } : null);
+        }
+    } catch (error) {
+        console.error("Failed to update like status:", error);
+        alert("There was an error liking the media. Please try again.");
+    }
+  }, [selectedMedia]);
+
+  const handleShare = useCallback(async () => {
+    if (!selectedMedia) return;
+
+    let shareUrl = window.location.origin;
+    if (!shareUrl || !shareUrl.startsWith('http')) {
+      shareUrl = 'https://ai.google.dev/gemini-api';
+    }
+
+    const shareData = {
+        title: selectedMedia.data.name,
+        text: `Check out this media: ${selectedMedia.data.name}`,
+        url: shareUrl,
+    };
+    
+    if (navigator.share) {
+        try {
+            await navigator.share(shareData);
+        } catch (err) {
+            console.error('Share failed:', err);
+            setActiveInfoTab('share');
+        }
+    } else {
+        setActiveInfoTab('share');
+    }
+  }, [selectedMedia]);
+
 
   const userIdentifier = user.email || user.phone || 'User';
   const watermarkText = settings.watermarkText || userIdentifier;
@@ -181,6 +249,230 @@ const MainApp: React.FC<MainAppProps> = ({ user, onLogout, settings, onSettingsC
     if (selectedMedia && mediaUrlForRender) {
         const uploadDate = new Date(parseInt(selectedMedia.data.id, 10));
         const simulatedViews = (parseInt(selectedMedia.data.id.slice(-4), 10) % 100) * 17 + 25; // pseudo-random views
+        const isLiked = selectedMedia.data.liked;
+
+        if (isSplitView && selectedMedia.data.mediaType !== 'image') {
+          return (
+            <div className="flex flex-col lg:flex-row gap-8">
+                {/* Left Column: Player & Info */}
+                <div className="lg:w-3/5 xl:w-2/3 flex flex-col gap-4">
+                    <MediaPlayer 
+                        key={selectedMedia.data.id}
+                        src={mediaUrlForRender} 
+                        mediaType={selectedMedia.data.mediaType}
+                        fileName={selectedMedia.data.name}
+                        mimeType={selectedMedia.data.type}
+                        loop={settings.loopVideo} 
+                        cinemaMode={settings.cinemaMode}
+                        showWatermark={settings.showWatermark}
+                        watermarkText={watermarkText}
+                        defaultPlaybackSpeed={settings.defaultPlaybackSpeed}
+                        performanceMode={settings.performanceMode}
+                        onMinimize={handleMinimize}
+                        initialTime={selectedMedia.initialTime}
+                        autoPlay={selectedMedia.autoPlay}
+                        onToggleSplitView={handleToggleSplitView}
+                        isSplitView={isSplitView}
+                    />
+                    <div>
+                      <h2 className="text-2xl font-bold text-gray-900 dark:text-white" title={selectedMedia.data.name}>
+                          {selectedMedia.data.name}
+                      </h2>
+                      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mt-2 gap-2">
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                              {simulatedViews.toLocaleString()} {t('gallery.views')} &bull; {uploadDate.toLocaleDateString()}
+                          </p>
+                          <div className="flex items-center gap-2 flex-wrap">
+                              <button
+                                onClick={handleLike}
+                                className={`flex items-center gap-2 font-semibold py-2 px-4 rounded-full transition-all duration-200 transform hover:scale-105 ${
+                                    isLiked
+                                    ? 'bg-pink-500 text-white hover:bg-pink-600 shadow-lg shadow-pink-500/20'
+                                    : 'bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600'
+                                }`}
+                              >
+                                <ThumbsUpIcon className="w-5 h-5" filled={isLiked} />
+                                <span>{selectedMedia.data.likes.toLocaleString()}</span>
+                              </button>
+                              <button
+                                  onClick={handleDownloadMedia}
+                                  className="flex items-center gap-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 font-semibold py-2 px-4 rounded-full transition-colors duration-200"
+                              >
+                                  <DownloadIcon className="w-5 h-5" />
+                                  {t('main.download')}
+                              </button>
+                              <button
+                                  onClick={handleShare}
+                                  className="flex items-center gap-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 font-semibold py-2 px-4 rounded-full transition-colors duration-200"
+                              >
+                                  <ShareIcon className="w-5 h-5" />
+                                  {t('share.title')}
+                              </button>
+                              <button
+                                  onClick={() => {
+                                      if (window.confirm(t('main.confirmDelete'))) {
+                                          handleDeleteMedia(selectedMedia.data.id);
+                                      }
+                                  }}
+                                  className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-full transition-colors duration-300 shadow-lg shadow-red-500/20"
+                              >
+                                  <TrashIcon className="w-5 h-5" />
+                              </button>
+                          </div>
+                      </div>
+                      {selectedMedia.data.tags && selectedMedia.data.tags.length > 0 && (
+                        <div className="flex flex-wrap items-center gap-2 mt-4">
+                            <TagIcon className="w-5 h-5 text-gray-500 dark:text-gray-400 flex-shrink-0" />
+                            {selectedMedia.data.tags.map(tag => (
+                                <span key={tag} className="px-3 py-1 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 text-xs font-semibold rounded-full">
+                                    {tag}
+                                </span>
+                            ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="mt-2">
+                        <div className="border-b border-gray-300 dark:border-gray-700 mb-4">
+                            <button onClick={() => setActiveInfoTab('share')} className={`px-4 py-2 font-semibold transition-colors ${activeInfoTab === 'share' ? 'text-cyan-500 border-b-2 border-cyan-500' : 'text-gray-500 hover:text-cyan-400'}`}>
+                                {t('share.tabTitle')}
+                            </button>
+                            <button onClick={() => setActiveInfoTab('ai')} className={`px-4 py-2 font-semibold transition-colors ${activeInfoTab === 'ai' ? 'text-cyan-500 border-b-2 border-cyan-500' : 'text-gray-500 hover:text-cyan-400'}`}>
+                                {t('aiPanel.tabTitle')}
+                            </button>
+                        </div>
+                        <div className="bg-gray-100 dark:bg-gray-900/50 p-4 rounded-lg min-h-[200px]">
+                            {activeInfoTab === 'share' ? (
+                                <ShareOptions mediaUrl={mediaUrlForRender} fileName={selectedMedia.data.name} mediaType={selectedMedia.data.mediaType} />
+                            ) : (
+                                <AskAiPanel media={selectedMedia.data} />
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Right Column: Gallery */}
+                <div className="lg:w-2/5 xl:w-1/3 max-h-[80vh] overflow-y-auto media-section-container rounded-lg p-4 bg-gray-100 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800">
+                    <MediaGallery 
+                        media={media} 
+                        onSelectMedia={handleSelectMedia} 
+                        onUploadClick={() => handleInitiateUpload('video/*,audio/*,image/*')}
+                        onUploadVideoClick={() => handleInitiateUpload('video/*')}
+                        onDeleteMedia={handleDeleteMedia}
+                        performanceMode={settings.performanceMode}
+                    />
+                </div>
+            </div>
+          );
+        }
+        
+        if (selectedMedia.data.mediaType === 'image') {
+          return (
+             <div>
+                <button
+                    onClick={handleBackToGallery}
+                    className="flex items-center gap-2 mb-4 p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition-colors"
+                    aria-label="Back to gallery"
+                >
+                    <ArrowLeftIcon className="w-6 h-6" />
+                    <span className="font-semibold">{t('main.backToGallery')}</span>
+                </button>
+                <div className="flex flex-col lg:flex-row gap-8">
+                    {/* Left Column: Image */}
+                    <div className="lg:w-2/3 xl:w-3/4">
+                       <MediaPlayer 
+                          key={selectedMedia.data.id}
+                          src={mediaUrlForRender} 
+                          mediaType={selectedMedia.data.mediaType}
+                          fileName={selectedMedia.data.name}
+                          mimeType={selectedMedia.data.type}
+                          loop={settings.loopVideo} 
+                          cinemaMode={settings.cinemaMode}
+                          showWatermark={settings.showWatermark}
+                          watermarkText={watermarkText}
+                          defaultPlaybackSpeed={settings.defaultPlaybackSpeed}
+                          performanceMode={settings.performanceMode}
+                          onMinimize={handleMinimize}
+                          initialTime={selectedMedia.initialTime}
+                          autoPlay={selectedMedia.autoPlay}
+                          onToggleSplitView={handleToggleSplitView}
+                          isSplitView={isSplitView}
+                      />
+                    </div>
+                     {/* Right Column: Info & AI */}
+                    <div className="lg:w-1/3 xl:w-1/4 flex flex-col gap-6">
+                        <div>
+                            <h2 className="text-2xl font-bold text-gray-900 dark:text-white break-words" title={selectedMedia.data.name}>
+                                {selectedMedia.data.name}
+                            </h2>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                                {simulatedViews.toLocaleString()} {t('gallery.views')} &bull; {uploadDate.toLocaleDateString()}
+                            </p>
+                        </div>
+
+                        {selectedMedia.data.tags && selectedMedia.data.tags.length > 0 && (
+                            <div className="flex flex-wrap items-center gap-2">
+                                <TagIcon className="w-5 h-5 text-gray-500 dark:text-gray-400 flex-shrink-0" />
+                                {selectedMedia.data.tags.map(tag => (
+                                    <span key={tag} className="px-3 py-1 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 text-xs font-semibold rounded-full">
+                                        {tag}
+                                    </span>
+                                ))}
+                            </div>
+                        )}
+                        
+                        <div className="flex flex-wrap items-center gap-2">
+                             <button
+                                onClick={handleLike}
+                                className={`flex items-center gap-2 font-semibold py-2 px-4 rounded-full transition-all duration-200 transform hover:scale-105 ${
+                                    isLiked
+                                    ? 'bg-pink-500 text-white hover:bg-pink-600 shadow-lg shadow-pink-500/20'
+                                    : 'bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600'
+                                }`}
+                              >
+                                <ThumbsUpIcon className="w-5 h-5" filled={isLiked} />
+                                <span>{selectedMedia.data.likes.toLocaleString()}</span>
+                              </button>
+                              <button
+                                  onClick={handleDownloadMedia}
+                                  className="flex items-center gap-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 font-semibold py-2 px-4 rounded-full transition-colors duration-200"
+                              >
+                                  <DownloadIcon className="w-5 h-5" />
+                              </button>
+                              <button
+                                  onClick={() => {
+                                      if (window.confirm(t('main.confirmDelete'))) {
+                                          handleDeleteMedia(selectedMedia.data.id);
+                                      }
+                                  }}
+                                  className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-full transition-colors duration-300 shadow-lg shadow-red-500/20"
+                              >
+                                  <TrashIcon className="w-5 h-5" />
+                              </button>
+                        </div>
+
+                        <div className="bg-gray-100 dark:bg-gray-900/50 p-4 rounded-lg">
+                            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                                <SparklesIcon className="w-6 h-6 text-cyan-400" />
+                                {t('aiPanel.tabTitle')}
+                            </h3>
+                            <AskAiPanel media={selectedMedia.data} />
+                        </div>
+
+                        <div className="bg-gray-100 dark:bg-gray-900/50 p-4 rounded-lg">
+                            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                                <ShareIcon className="w-5 h-5" />
+                                {t('share.tabTitle')}
+                            </h3>
+                            <ShareOptions mediaUrl={mediaUrlForRender} fileName={selectedMedia.data.name} mediaType={selectedMedia.data.mediaType} />
+                        </div>
+                    </div>
+                </div>
+            </div>
+          );
+        }
+
+        // Default layout for Video/Audio
         return (
             <div>
               <div className="mb-4">
@@ -208,6 +500,8 @@ const MainApp: React.FC<MainAppProps> = ({ user, onLogout, settings, onSettingsC
                           onMinimize={handleMinimize}
                           initialTime={selectedMedia.initialTime}
                           autoPlay={selectedMedia.autoPlay}
+                          onToggleSplitView={handleToggleSplitView}
+                          isSplitView={isSplitView}
                       />
                   </div>
               </div>
@@ -221,9 +515,16 @@ const MainApp: React.FC<MainAppProps> = ({ user, onLogout, settings, onSettingsC
                           {simulatedViews.toLocaleString()} {t('gallery.views')} &bull; {uploadDate.toLocaleDateString()}
                       </p>
                       <div className="flex items-center gap-2">
-                          <button className="flex items-center gap-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 font-semibold py-2 px-4 rounded-full transition-colors duration-200">
-                            <ThumbsUpIcon className="w-5 h-5" />
-                            <span>{t('gallery.like')}</span>
+                          <button
+                            onClick={handleLike}
+                            className={`flex items-center gap-2 font-semibold py-2 px-4 rounded-full transition-all duration-200 transform hover:scale-105 ${
+                                isLiked
+                                ? 'bg-pink-500 text-white hover:bg-pink-600 shadow-lg shadow-pink-500/20'
+                                : 'bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600'
+                            }`}
+                          >
+                            <ThumbsUpIcon className="w-5 h-5" filled={isLiked} />
+                            <span>{selectedMedia.data.likes.toLocaleString()}</span>
                           </button>
                           <button
                               onClick={handleDownloadMedia}
@@ -233,7 +534,7 @@ const MainApp: React.FC<MainAppProps> = ({ user, onLogout, settings, onSettingsC
                               {t('main.download')}
                           </button>
                           <button
-                              onClick={() => setActiveInfoTab('share')}
+                              onClick={handleShare}
                               className="flex items-center gap-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 font-semibold py-2 px-4 rounded-full transition-colors duration-200"
                           >
                               <ShareIcon className="w-5 h-5" />
@@ -251,6 +552,16 @@ const MainApp: React.FC<MainAppProps> = ({ user, onLogout, settings, onSettingsC
                           </button>
                       </div>
                   </div>
+                  {selectedMedia.data.tags && selectedMedia.data.tags.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-2 mt-4">
+                        <TagIcon className="w-5 h-5 text-gray-500 dark:text-gray-400 flex-shrink-0" />
+                        {selectedMedia.data.tags.map(tag => (
+                            <span key={tag} className="px-3 py-1 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 text-xs font-semibold rounded-full">
+                                {tag}
+                            </span>
+                        ))}
+                    </div>
+                  )}
               </div>
 
               <div className="mt-6">
@@ -277,12 +588,13 @@ const MainApp: React.FC<MainAppProps> = ({ user, onLogout, settings, onSettingsC
         return <MediaGallery 
             media={media} 
             onSelectMedia={handleSelectMedia} 
-            onUploadClick={() => setIsUploading(true)} 
+            onUploadClick={() => handleInitiateUpload('video/*,audio/*,image/*')}
+            onUploadVideoClick={() => handleInitiateUpload('video/*')}
             onDeleteMedia={handleDeleteMedia}
             performanceMode={settings.performanceMode}
         />;
     }
-    return <MediaUploader onMediaUpload={handleMediaUpload} />;
+    return <MediaUploader onMediaUpload={handleMediaUpload} accept={uploadAcceptType} />;
   };
 
   return (
@@ -290,7 +602,9 @@ const MainApp: React.FC<MainAppProps> = ({ user, onLogout, settings, onSettingsC
       <div className="w-full max-w-6xl mx-auto">
         <header className="flex items-center justify-between mb-8 w-full">
             <div className="flex items-center gap-3">
-              <Logo className="w-16 h-auto" />
+              <button onClick={handleBackToGallery} aria-label="Go to gallery view">
+                <Logo className="w-16 h-auto" />
+              </button>
               <h1 className="hidden sm:block text-3xl font-bold tracking-tight bg-gradient-to-r from-cyan-500 to-blue-500 text-transparent bg-clip-text">
                 NV & NE ltd
               </h1>
@@ -327,7 +641,7 @@ const MainApp: React.FC<MainAppProps> = ({ user, onLogout, settings, onSettingsC
             </div>
         </header>
 
-        <main className={`${selectedMedia ? '' : 'bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm rounded-2xl shadow-2xl shadow-cyan-500/10 p-6 sm:p-8 border border-gray-300 dark:border-gray-700'}`}>
+        <main className={`${!selectedMedia || isSplitView ? 'bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm rounded-2xl shadow-2xl shadow-cyan-500/10 p-6 sm:p-8 border border-gray-300 dark:border-gray-700' : ''}`}>
             <div key={selectedMedia ? selectedMedia.data.id : 'gallery'} className="opacity-0 animate-fade-in-up">
               {renderContent()}
             </div>

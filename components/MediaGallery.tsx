@@ -24,6 +24,7 @@ interface MediaGalleryProps {
 
 type SortKey = 'date' | 'name';
 type SortDirection = 'asc' | 'desc';
+type CategoryKey = 'movies' | 'videoClips' | 'musicLibrary' | 'imageGallery';
 
 
 const MediaGallery: React.FC<MediaGalleryProps> = ({ media, onSelectMedia, onUploadClick, onDeleteMedia, performanceMode }) => {
@@ -35,6 +36,9 @@ const MediaGallery: React.FC<MediaGalleryProps> = ({ media, onSelectMedia, onUpl
   });
   const [typeFilter, setTypeFilter] = useState<MediaType | 'all'>('all');
   const [durationFilter, setDurationFilter] = useState<string>('any');
+  const [sizeFilter, setSizeFilter] = useState<string>('any');
+  const [resolutionFilter, setResolutionFilter] = useState<string>('any');
+  const [dateFilter, setDateFilter] = useState<{ start: string; end: string }>({ start: '', end: '' });
   const [isSelectMode, setIsSelectMode] = useState(false);
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   
@@ -44,16 +48,41 @@ const MediaGallery: React.FC<MediaGalleryProps> = ({ media, onSelectMedia, onUpl
     '1-5': t('gallery.durationMedium'),
     '>5': t('gallery.durationLong'),
   };
+
+  const SIZE_OPTIONS: Record<string, string> = {
+    'any': t('gallery.sizeAny'),
+    '<10': t('gallery.sizeSmall'),
+    '10-100': t('gallery.sizeMedium'),
+    '>100': t('gallery.sizeLarge'),
+  };
+
+  const RESOLUTION_OPTIONS: Record<string, string> = {
+    'any': t('gallery.resolutionAny'),
+    'sd': t('gallery.resolutionSD'),
+    'hd': t('gallery.resolutionHD'),
+    'fhd': t('gallery.resolutionFHD'),
+    'uhd': t('gallery.resolutionUHD'),
+  };
+
+  const categoryTitles: Record<CategoryKey, string> = {
+    movies: t('gallery.categoryMovies'),
+    videoClips: t('gallery.categoryVideoClips'),
+    musicLibrary: t('gallery.categoryMusic'),
+    imageGallery: t('gallery.categoryImages'),
+  };
   
   const isFiltered = useMemo(() => 
-    searchQuery.length > 0 || typeFilter !== 'all' || durationFilter !== 'any', 
-    [searchQuery, typeFilter, durationFilter]
+    searchQuery.length > 0 || typeFilter !== 'all' || durationFilter !== 'any' || sizeFilter !== 'any' || resolutionFilter !== 'any' || dateFilter.start || dateFilter.end, 
+    [searchQuery, typeFilter, durationFilter, sizeFilter, resolutionFilter, dateFilter]
   );
 
   const handleClearFilters = () => {
     setSearchQuery('');
     setTypeFilter('all');
     setDurationFilter('any');
+    setSizeFilter('any');
+    setResolutionFilter('any');
+    setDateFilter({ start: '', end: '' });
   };
 
   const filteredAndSortedMedia = useMemo(() => {
@@ -69,6 +98,34 @@ const MediaGallery: React.FC<MediaGalleryProps> = ({ media, onSelectMedia, onUpl
           case '>5': return duration > 300;
           default: return true;
         }
+      })
+      .filter(item => {
+        if (sizeFilter === 'any') return true;
+        const sizeMB = item.size / (1024 * 1024);
+        switch (sizeFilter) {
+          case '<10': return sizeMB < 10;
+          case '10-100': return sizeMB >= 10 && sizeMB <= 100;
+          case '>100': return sizeMB > 100;
+          default: return true;
+        }
+      })
+      .filter(item => {
+        if (resolutionFilter === 'any' || !item.resolution) return true;
+        const width = item.resolution.width;
+        switch (resolutionFilter) {
+            case 'sd': return width < 1280;
+            case 'hd': return width >= 1280 && width < 1920;
+            case 'fhd': return width >= 1920 && width < 3840;
+            case 'uhd': return width >= 3840;
+            default: return true;
+        }
+      })
+      .filter(item => {
+          if (!dateFilter.start && !dateFilter.end) return true;
+          const itemDate = parseInt(item.id, 10);
+          const startDate = dateFilter.start ? new Date(dateFilter.start).getTime() : 0;
+          const endDate = dateFilter.end ? new Date(dateFilter.end).setHours(23, 59, 59, 999) : Infinity;
+          return itemDate >= startDate && itemDate <= endDate;
       });
 
     return [...filtered].sort((a, b) => {
@@ -80,9 +137,36 @@ const MediaGallery: React.FC<MediaGalleryProps> = ({ media, onSelectMedia, onUpl
       }
       return sortConfig.direction === 'asc' ? -comparison : comparison;
     });
-  }, [media, searchQuery, typeFilter, durationFilter, sortConfig]);
+  }, [media, searchQuery, typeFilter, durationFilter, sizeFilter, resolutionFilter, dateFilter, sortConfig]);
 
-  const totalItems = filteredAndSortedMedia.length;
+  const { groupedMedia, categoryOrder, totalItems } = useMemo(() => {
+    const groups: Record<CategoryKey, MediaData[]> = {
+      movies: [],
+      videoClips: [],
+      musicLibrary: [],
+      imageGallery: [],
+    };
+
+    filteredAndSortedMedia.forEach(item => {
+      if (item.mediaType === 'image') {
+        groups.imageGallery.push(item);
+      } else if (item.mediaType === 'audio') {
+        groups.musicLibrary.push(item);
+      } else if (item.mediaType === 'video') {
+        if (item.duration && item.duration > 420) { // More than 7 minutes
+          groups.movies.push(item);
+        } else {
+          groups.videoClips.push(item);
+        }
+      }
+    });
+    
+    const order: CategoryKey[] = ['movies', 'videoClips', 'musicLibrary', 'imageGallery'];
+    const total = Object.values(groups).reduce((acc, curr) => acc + curr.length, 0);
+
+    return { groupedMedia: groups, categoryOrder: order, totalItems: total };
+}, [filteredAndSortedMedia]);
+
 
   const handleSort = (key: SortKey) => {
     setSortConfig(prev => ({
@@ -184,6 +268,9 @@ const MediaGallery: React.FC<MediaGalleryProps> = ({ media, onSelectMedia, onUpl
     </button>
   );
 
+  const selectClassName = "text-sm font-medium bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-300 rounded-md py-1.5 px-3 border-transparent focus:outline-none focus:ring-2 focus:ring-cyan-500 transition-colors appearance-none disabled:opacity-50 disabled:cursor-not-allowed";
+  const dateInputClassName = "text-sm font-medium bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-300 rounded-md py-1 px-2 border-transparent focus:outline-none focus:ring-2 focus:ring-cyan-500 transition-colors";
+
   return (
     <div>
       <div className="flex justify-between items-center mb-6 gap-4">
@@ -275,33 +362,45 @@ const MediaGallery: React.FC<MediaGalleryProps> = ({ media, onSelectMedia, onUpl
                 <TypeFilterButton filter="image">{t('gallery.images')}</TypeFilterButton>
               </div>
               <div className="relative flex items-center gap-1 p-1">
-                <select
-                  value={durationFilter}
-                  onChange={(e) => setDurationFilter(e.target.value)}
-                  className="text-sm font-medium bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-300 rounded-md py-1.5 px-3 border-transparent focus:outline-none focus:ring-2 focus:ring-cyan-500 transition-colors appearance-none disabled:opacity-50 disabled:cursor-not-allowed"
-                  aria-label="Filter by duration"
-                  disabled={typeFilter === 'image'}
-                >
+                <select value={durationFilter} onChange={(e) => setDurationFilter(e.target.value)} className={selectClassName} aria-label="Filter by duration" disabled={typeFilter === 'image'}>
                   {Object.entries(DURATION_OPTIONS).map(([value, label]) => (
-                    <option key={value} value={value} className="bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
-                      {label}
-                    </option>
+                    <option key={value} value={value} className="bg-white dark:bg-gray-800 text-gray-800 dark:text-white">{label}</option>
                   ))}
                 </select>
               </div>
               <div className="sm:ml-auto pr-1">
                 {isFiltered && (
-                    <button
-                        onClick={handleClearFilters}
-                        className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-md transition-colors"
-                        title={t('gallery.clearFilters')}
-                    >
+                    <button onClick={handleClearFilters} className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-md transition-colors" title={t('gallery.clearFilters')}>
                         <XIcon className="w-4 h-4" />
                         <span>{t('gallery.clearFilters')}</span>
                     </button>
                 )}
               </div>
             </div>
+          </div>
+          <div className="flex flex-col xl:flex-row gap-4">
+              <div className="flex items-center gap-2 p-1 rounded-lg bg-gray-100 dark:bg-gray-700/50 border border-gray-300 dark:border-gray-600">
+                <span className="text-sm font-medium text-gray-500 dark:text-gray-400 pl-2">{t('gallery.size')}</span>
+                <select value={sizeFilter} onChange={(e) => setSizeFilter(e.target.value)} className={selectClassName} aria-label="Filter by file size">
+                  {Object.entries(SIZE_OPTIONS).map(([value, label]) => (
+                    <option key={value} value={value} className="bg-white dark:bg-gray-800 text-gray-800 dark:text-white">{label}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex items-center gap-2 p-1 rounded-lg bg-gray-100 dark:bg-gray-700/50 border border-gray-300 dark:border-gray-600">
+                <span className="text-sm font-medium text-gray-500 dark:text-gray-400 pl-2">{t('gallery.resolution')}</span>
+                <select value={resolutionFilter} onChange={(e) => setResolutionFilter(e.target.value)} className={selectClassName} aria-label="Filter by resolution" disabled={typeFilter === 'audio'}>
+                  {Object.entries(RESOLUTION_OPTIONS).map(([value, label]) => (
+                    <option key={value} value={value} className="bg-white dark:bg-gray-800 text-gray-800 dark:text-white">{label}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex-grow flex items-center gap-2 p-1 rounded-lg bg-gray-100 dark:bg-gray-700/50 border border-gray-300 dark:border-gray-600">
+                <span className="text-sm font-medium text-gray-500 dark:text-gray-400 pl-2">{t('gallery.dateRange')}</span>
+                <input type="date" value={dateFilter.start} onChange={(e) => setDateFilter(df => ({...df, start: e.target.value}))} className={dateInputClassName} aria-label={t('gallery.startDate')} />
+                <span className="text-gray-500 dark:text-gray-400">-</span>
+                <input type="date" value={dateFilter.end} onChange={(e) => setDateFilter(df => ({...df, end: e.target.value}))} className={dateInputClassName} aria-label={t('gallery.endDate')} />
+              </div>
           </div>
         </div>
       )}
@@ -330,24 +429,35 @@ const MediaGallery: React.FC<MediaGalleryProps> = ({ media, onSelectMedia, onUpl
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8">
-            {filteredAndSortedMedia.map(item => (
-                <MediaThumbnail
-                    key={item.id}
-                    mediaItem={item}
-                    onSelect={() => onSelectMedia(item)}
-                    onDelete={(e) => {
-                        e.stopPropagation();
-                        if (window.confirm(t('main.confirmDelete'))) {
-                            onDeleteMedia(item.id);
-                        }
-                    }}
-                    isSelectMode={isSelectMode}
-                    isSelected={selectedItems.has(item.id)}
-                    onToggleSelect={() => handleToggleItemSelection(item.id)}
-                    performanceMode={performanceMode}
-                />
-            ))}
+        <div className="space-y-8">
+            {categoryOrder.map(categoryKey => {
+                const items = groupedMedia[categoryKey];
+                if (items.length === 0) return null;
+                return (
+                    <div key={categoryKey}>
+                        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">{categoryTitles[categoryKey]}</h3>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-4 gap-y-8">
+                            {items.map(item => (
+                                 <MediaThumbnail
+                                    key={item.id}
+                                    mediaItem={item}
+                                    onSelect={() => onSelectMedia(item)}
+                                    onDelete={(e) => {
+                                        e.stopPropagation();
+                                        if (window.confirm(t('main.confirmDelete'))) {
+                                            onDeleteMedia(item.id);
+                                        }
+                                    }}
+                                    isSelectMode={isSelectMode}
+                                    isSelected={selectedItems.has(item.id)}
+                                    onToggleSelect={() => handleToggleItemSelection(item.id)}
+                                    performanceMode={performanceMode}
+                                />
+                            ))}
+                        </div>
+                    </div>
+                )
+            })}
         </div>
       )}
     </div>

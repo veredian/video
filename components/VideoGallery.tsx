@@ -12,12 +12,14 @@ import { useTranslation } from '../i18n/LanguageContext';
 import { ImageIcon } from './icons/ImageIcon';
 import { DownloadIcon } from './icons/DownloadIcon';
 import { TrashIcon } from './icons/TrashIcon';
+import { FilmIcon } from './icons/FilmIcon';
 
 
 interface MediaGalleryProps {
   media: MediaData[];
   onSelectMedia: (media: MediaData) => void;
   onUploadClick: () => void;
+  onUploadVideoClick: () => void;
   onDeleteMedia: (mediaId: string) => void;
   performanceMode: boolean;
 }
@@ -27,7 +29,7 @@ type SortDirection = 'asc' | 'desc';
 type CategoryKey = 'movies' | 'videoClips' | 'musicLibrary' | 'imageGallery';
 
 
-const MediaGallery: React.FC<MediaGalleryProps> = ({ media, onSelectMedia, onUploadClick, onDeleteMedia, performanceMode }) => {
+const MediaGallery: React.FC<MediaGalleryProps> = ({ media, onSelectMedia, onUploadClick, onUploadVideoClick, onDeleteMedia, performanceMode }) => {
   const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: SortDirection }>({
@@ -66,7 +68,15 @@ const MediaGallery: React.FC<MediaGalleryProps> = ({ media, onSelectMedia, onUpl
 
   const filteredAndSortedMedia = useMemo(() => {
     const filtered = media
-      .filter(item => item.name.toLowerCase().includes(searchQuery.toLowerCase()))
+      .filter(item => {
+        const query = searchQuery.toLowerCase();
+        if (!query) return true;
+        
+        const nameMatch = item.name.toLowerCase().includes(query);
+        const tagMatch = item.tags?.some(tag => tag.toLowerCase().includes(query)) ?? false;
+        
+        return nameMatch || tagMatch;
+      })
       .filter(item => typeFilter === 'all' || item.mediaType === typeFilter)
       .filter(item => {
         if (durationFilter === 'any' || item.mediaType === 'image') return true;
@@ -232,9 +242,16 @@ const MediaGallery: React.FC<MediaGalleryProps> = ({ media, onSelectMedia, onUpl
                     {isSelectMode ? t('gallery.cancel') : t('gallery.select')}
                 </button>
             )}
+             <button
+              onClick={onUploadVideoClick}
+              className={`hidden ${isSelectMode ? '' : 'sm:flex'} items-center gap-2 bg-cyan-500 hover:bg-cyan-600 text-black font-bold py-2 px-4 rounded-md transition-all duration-300 transform hover:scale-105 shadow-lg shadow-cyan-500/20`}
+            >
+              <FilmIcon className="w-5 h-5" />
+              {t('gallery.uploadVideo')}
+            </button>
             <button
               onClick={onUploadClick}
-              className={`hidden ${isSelectMode ? '' : 'sm:flex'} items-center gap-2 bg-cyan-500 hover:bg-cyan-600 text-black font-bold py-2 px-4 rounded-md transition-all duration-300 transform hover:scale-105 shadow-lg shadow-cyan-500/20`}
+              className={`hidden ${isSelectMode ? '' : 'sm:flex'} items-center gap-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-white font-semibold py-2 px-4 rounded-md transition-colors`}
             >
               <PlusIcon className="w-5 h-5" />
               {t('gallery.uploadNew')}

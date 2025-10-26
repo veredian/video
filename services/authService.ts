@@ -2,6 +2,7 @@
 // In a real app, this would make API calls to a secure server.
 // WARNING: Passwords are stored in plaintext. This is NOT secure and is for demonstration purposes only.
 import { mediaDBService } from './videoDBService';
+import { GoogleGenAI, Type } from '@google/genai';
 
 export interface User {
   email?: string;
@@ -11,6 +12,7 @@ export interface User {
 }
 
 export type MediaType = 'video' | 'audio' | 'image';
+export type TranscriptionStatus = 'pending' | 'completed' | 'failed';
 
 export interface MediaData {
   id: string;
@@ -18,6 +20,15 @@ export interface MediaData {
   type: string; // The full MIME type
   mediaType: MediaType;
   duration?: number; // in seconds
+  size: number; // in bytes
+  resolution?: {
+    width: number;
+    height: number;
+  };
+  likes: number;
+  liked: boolean;
+  tags?: string[];
+  transcriptionStatus?: TranscriptionStatus;
 }
 
 const USERS_KEY = 'NVNELtdUsers';
@@ -46,6 +57,73 @@ const saveUsers = (users: Record<string, User>) => {
 const isEmail = (identifier: string): boolean => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailRegex.test(identifier);
+};
+
+const blobToBase64 = (blob: Blob): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(blob);
+      reader.onload = () => {
+        const result = reader.result as string;
+        // Return only the base64 part, without the data URI scheme
+        resolve(result.split(',')[1]); 
+      };
+      reader.onerror = error => reject(error);
+    });
+};
+
+const generateTags = async (mediaFile: File, mediaType: MediaType): Promise<string[] | undefined> => {
+    if (!process.env.API_KEY) {
+        console.warn("AI features disabled. API key is missing.");
+        return undefined;
+    }
+
+    // AI tagging for audio is often less useful for this app's context
+    if (mediaType === 'audio') {
+        return undefined;
+    }
+
+    try {
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const base64Data = await blobToBase64(mediaFile);
+        const mediaPart = {
+            inlineData: {
+                mimeType: mediaFile.type,
+                data: base64Data,
+            },
+        };
+        const textPart = { text: "Analyze this media and generate up to 5 relevant tags. Tags should be concise, single words or short 2-3 word phrases that describe the main subjects, style, or mood." };
+        
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: { parts: [mediaPart, textPart] },
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        tags: {
+                            type: Type.ARRAY,
+                            items: {
+                                type: Type.STRING,
+                                description: "A relevant tag for the media."
+                            }
+                        }
+                    },
+                    required: ["tags"]
+                }
+            }
+        });
+
+        const jsonResponse = JSON.parse(response.text);
+        if (jsonResponse.tags && Array.isArray(jsonResponse.tags)) {
+            // Take up to 5 tags and ensure they are strings.
+            return jsonResponse.tags.slice(0, 5).map(String);
+        }
+    } catch (e) {
+        console.error("Failed to generate AI tags:", e);
+    }
+    return undefined;
 };
 
 
@@ -157,14 +235,54 @@ export const authService = {
           });
         };
 
-        const duration = await getDuration(mediaFile);
+        const getMediaDimensions = (file: File): Promise<{ width: number; height: number } | undefined> => {
+            return new Promise((resolve) => {
+                const url = URL.createObjectURL(file);
+                if (file.type.startsWith('video/')) {
+                    const video = document.createElement('video');
+                    video.preload = 'metadata';
+                    video.onloadedmetadata = () => {
+                        URL.revokeObjectURL(url);
+                        resolve({ width: video.videoWidth, height: video.videoHeight });
+                    };
+                    video.onerror = () => { URL.revokeObjectURL(url); resolve(undefined); };
+                    video.src = url;
+                } else if (file.type.startsWith('image/')) {
+                    const img = new Image();
+                    img.onload = () => {
+                        URL.revokeObjectURL(url);
+                        resolve({ width: img.width, height: img.height });
+                    };
+                    img.onerror = () => { URL.revokeObjectURL(url); resolve(undefined); };
+                    img.src = url;
+                } else {
+                    URL.revokeObjectURL(url);
+                    resolve(undefined);
+                }
+            });
+        };
+
+        const [duration, resolution, tags] = await Promise.all([
+            getDuration(mediaFile),
+            getMediaDimensions(mediaFile),
+            generateTags(mediaFile, mediaType)
+        ]);
         
+        const statuses: TranscriptionStatus[] = ['pending', 'completed', 'failed'];
+        const randomStatus = statuses[Math.floor(Math.random() * statuses.length)];
+
          const mediaData: MediaData = {
           id: Date.now().toString(),
           name: mediaFile.name,
           type: mediaFile.type,
           mediaType: mediaType,
           duration: duration,
+          size: mediaFile.size,
+          resolution: resolution,
+          likes: Math.floor(Math.random() * 250),
+          liked: false,
+          tags: tags,
+          transcriptionStatus: (mediaType === 'video' || mediaType === 'audio') ? randomStatus : undefined,
         };
 
         try {
@@ -216,6 +334,36 @@ export const authService = {
     });
   },
   
+  toggleLikeStatus: (mediaId: string): Promise<User> => {
+    return new Promise((resolve, reject) => {
+        const userIdentifier = localStorage.getItem(CURRENT_USER_KEY);
+        if (!userIdentifier) return reject(new Error("No user logged in"));
+
+        const users = getUsers();
+        const user = users[userIdentifier];
+        if (user) {
+            const mediaItem = user.media.find(v => v.id === mediaId);
+            if (!mediaItem) {
+                return reject(new Error("Media not found for this user."));
+            }
+            
+            if (mediaItem.liked) {
+                mediaItem.likes -= 1;
+                mediaItem.liked = false;
+            } else {
+                mediaItem.likes += 1;
+                mediaItem.liked = true;
+            }
+
+            saveUsers(users);
+            const { password, ...userWithoutPassword } = user;
+            resolve(userWithoutPassword);
+        } else {
+            reject(new Error("Current user not found"));
+        }
+    });
+  },
+
   clearAllMediaForCurrentUser: (): Promise<User> => {
     return new Promise(async (resolve, reject) => {
         const userIdentifier = localStorage.getItem(CURRENT_USER_KEY);

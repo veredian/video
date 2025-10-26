@@ -1,9 +1,9 @@
 import React from 'react';
 
-export const ThumbsUpIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+export const ThumbsUpIcon: React.FC<React.SVGProps<SVGSVGElement> & { filled?: boolean }> = ({ filled, ...props }) => (
   <svg 
     xmlns="http://www.w3.org/2000/svg" 
-    fill="none" 
+    fill={filled ? "currentColor" : "none"} 
     viewBox="0 0 24 24" 
     strokeWidth={1.5} 
     stroke="currentColor" 

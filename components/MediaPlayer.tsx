@@ -12,6 +12,7 @@ import { MediaType } from '../services/authService';
 import { useTranslation } from '../i18n/LanguageContext';
 import { PaintBrushIcon } from './icons/PaintBrushIcon';
 import { MinimizeIcon } from './icons/MinimizeIcon';
+import { SplitViewIcon } from './icons/SplitViewIcon';
 
 interface MediaPlayerProps {
   src: string;
@@ -25,6 +26,8 @@ interface MediaPlayerProps {
   defaultPlaybackSpeed: number;
   performanceMode: boolean;
   onMinimize: (currentTime: number, isPlaying: boolean) => void;
+  onToggleSplitView: () => void;
+  isSplitView: boolean;
   initialTime?: number;
   autoPlay?: boolean;
 }
@@ -42,7 +45,7 @@ const formatTime = (timeInSeconds: number) => {
 const PLAYBACK_RATES = [0.5, 0.75, 1, 1.25, 1.5, 2];
 
 const MediaPlayer: React.FC<MediaPlayerProps> = ({ 
-    src, mediaType, fileName, loop, cinemaMode, showWatermark, watermarkText, defaultPlaybackSpeed, mimeType, performanceMode, onMinimize, initialTime, autoPlay
+    src, mediaType, fileName, loop, cinemaMode, showWatermark, watermarkText, defaultPlaybackSpeed, mimeType, performanceMode, onMinimize, onToggleSplitView, isSplitView, initialTime, autoPlay
 }) => {
   const { t } = useTranslation();
   const [isPlaying, setIsPlaying] = useState(autoPlay || false);
@@ -529,6 +532,11 @@ useEffect(() => {
                      <button onClick={handleMinimize} className="p-1 hover:scale-110 transition-transform" aria-label="Minimize player">
                         <MinimizeIcon className="w-6 h-6" />
                     </button>
+                    {mediaType !== 'image' && (
+                        <button onClick={onToggleSplitView} className="p-1 hover:scale-110 transition-transform" aria-label={t('player.splitView')}>
+                            <SplitViewIcon className={`w-6 h-6 ${isSplitView ? 'text-cyan-400' : ''}`} />
+                        </button>
+                    )}
                     {mediaType === 'video' && document.pictureInPictureEnabled && (
                         <button onClick={togglePiP} className="p-1 hover:scale-110 transition-transform">
                            <PictureInPictureIcon className="w-6 h-6" />
