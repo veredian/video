@@ -532,11 +532,9 @@ useEffect(() => {
                      <button onClick={handleMinimize} className="p-1 hover:scale-110 transition-transform" aria-label="Minimize player">
                         <MinimizeIcon className="w-6 h-6" />
                     </button>
-                    {mediaType !== 'image' && (
-                        <button onClick={onToggleSplitView} className="p-1 hover:scale-110 transition-transform" aria-label={t('player.splitView')}>
-                            <SplitViewIcon className={`w-6 h-6 ${isSplitView ? 'text-cyan-400' : ''}`} />
-                        </button>
-                    )}
+                    <button onClick={onToggleSplitView} className="p-1 hover:scale-110 transition-transform" aria-label={t('player.splitView')}>
+                        <SplitViewIcon className={`w-6 h-6 ${isSplitView ? 'text-cyan-400' : ''}`} />
+                    </button>
                     {mediaType === 'video' && document.pictureInPictureEnabled && (
                         <button onClick={togglePiP} className="p-1 hover:scale-110 transition-transform">
                            <PictureInPictureIcon className="w-6 h-6" />

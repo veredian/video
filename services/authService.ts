@@ -78,11 +78,6 @@ const generateTags = async (mediaFile: File, mediaType: MediaType): Promise<stri
         return undefined;
     }
 
-    // AI tagging for audio is often less useful for this app's context
-    if (mediaType === 'audio') {
-        return undefined;
-    }
-
     try {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const base64Data = await blobToBase64(mediaFile);
@@ -92,7 +87,14 @@ const generateTags = async (mediaFile: File, mediaType: MediaType): Promise<stri
                 data: base64Data,
             },
         };
-        const textPart = { text: "Analyze this media and generate up to 5 relevant tags. Tags should be concise, single words or short 2-3 word phrases that describe the main subjects, style, or mood." };
+        
+        let promptText = "Analyze this media and generate up to 5 relevant tags. Tags should be concise, single words or short 2-3 word phrases that describe the main subjects, style, or mood.";
+
+        if (mediaType === 'audio') {
+            promptText = "Analyze this audio file. Generate up to 5 relevant tags describing its content. If it's music, include genre (e.g., 'Christian music', 'Marching band'), mood, and instrumentation (e.g., 'Instrumental'). If speech, identify the topic.";
+        }
+        
+        const textPart = { text: promptText };
         
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
@@ -247,7 +249,7 @@ export const authService = {
                     };
                     video.onerror = () => { URL.revokeObjectURL(url); resolve(undefined); };
                     video.src = url;
-                } else if (file.type.startsWith('image/')) {
+                } else if (mediaFile.type.startsWith('image/')) {
                     const img = new Image();
                     img.onload = () => {
                         URL.revokeObjectURL(url);

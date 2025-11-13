@@ -594,7 +594,7 @@ const MainApp: React.FC<MainAppProps> = ({ user, onLogout, settings, onSettingsC
             performanceMode={settings.performanceMode}
         />;
     }
-    return <MediaUploader onMediaUpload={handleMediaUpload} accept={uploadAcceptType} />;
+    return <MediaUploader onMediaUpload={handleMediaUpload} />;
   };
 
   return (
