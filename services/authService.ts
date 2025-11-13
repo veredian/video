@@ -91,7 +91,7 @@ const generateTags = async (mediaFile: File, mediaType: MediaType): Promise<stri
         let promptText = "Analyze this media and generate up to 5 relevant tags. Tags should be concise, single words or short 2-3 word phrases that describe the main subjects, style, or mood.";
 
         if (mediaType === 'audio') {
-            promptText = "Analyze this audio file. Generate up to 5 relevant tags describing its content. If it's music, include genre (e.g., 'Christian music', 'Marching band'), mood, and instrumentation (e.g., 'Instrumental'). If speech, identify the topic.";
+            promptText = "Analyze this audio file. Generate up to 5 relevant tags describing its content. If it is music, focus on identifying genre (e.g., 'Christian music', 'Gospel', 'Marching band'), instrumentation (e.g., 'Instrumental', 'Brass band'), mood (e.g., 'Uplifting', 'Patriotic'), and any group affiliation if discernible (e.g., 'Youth group', 'Pathfinders'). If the audio contains speech, identify the main topic.";
         }
         
         const textPart = { text: promptText };
@@ -108,7 +108,7 @@ const generateTags = async (mediaFile: File, mediaType: MediaType): Promise<stri
                             type: Type.ARRAY,
                             items: {
                                 type: Type.STRING,
-                                description: "A relevant tag for the media."
+                                description: "A relevant tag for the media, such as genre, mood, instrumentation, or topic."
                             }
                         }
                     },

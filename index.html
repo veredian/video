@@ -1,198 +1,137 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="rw">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NV & NE ltd | Upload & Share</title>
-    <meta name="description" content="An easy-to-use tool to upload your videos and generate shareable links or embed codes for your websites. Simply drag and drop your video to get started.">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>☁️</text></svg>">
-    
-    <script type="importmap">
-    {
-      "imports": {
-        "@google/genai": "https://aistudiocdn.com/@google/genai@^1.25.0",
-        "react/": "https://aistudiocdn.com/react@^19.2.0/",
-        "react": "https://aistudiocdn.com/react@^19.2.0",
-        "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/"
-      }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Media Hub (AI + Upload)</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f2f2f2;
+      margin: 0;
+      padding: 0;
     }
-    </script>
-    
-    <style>
-        /* Custom font and base styles */
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-        body {
-            font-family: 'Inter', sans-serif;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-        }
-
-        /* Custom Themes */
-        .theme-sunset { background: linear-gradient(135deg, #FFD3B6, #FFAAA5); }
-        .theme-ocean { background: linear-gradient(135deg, #A8D0E6, #374785); }
-        .theme-space { background: linear-gradient(135deg, #1B262C, #0F4C75, #3282B8); }
-
-        /* Custom scrollbar for better aesthetics */
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #f1f1f1; }
-        .dark ::-webkit-scrollbar-track { background: #2d3748; }
-        ::-webkit-scrollbar-thumb { background: #888; border-radius: 4px; }
-        .dark ::-webkit-scrollbar-thumb { background: #555; }
-        ::-webkit-scrollbar-thumb:hover { background: #555; }
-        .dark ::-webkit-scrollbar-thumb:hover { background: #333; }
-
-        /* Hide scrollbar for gallery sections */
-        .media-section-container {
-            -ms-overflow-style: none; /* IE and Edge */
-            scrollbar-width: none; /* Firefox */
-        }
-        .media-section-container::-webkit-scrollbar {
-            display: none; /* Chrome, Safari and Opera */
-        }
-
-        /* Custom styles for video player range inputs */
-        .video-range {
-            -webkit-appearance: none;
-            appearance: none;
-            background: transparent;
-            cursor: pointer;
-            height: 1rem;
-        }
-        .video-range::-webkit-slider-runnable-track {
-            background-color: rgba(255, 255, 255, 0.3);
-            border-radius: 0.5rem;
-            height: 0.35rem;
-        }
-        .video-range::-moz-range-track {
-            background-color: rgba(255, 255, 255, 0.3);
-            border-radius: 0.5rem;
-            height: 0.35rem;
-        }
-        .video-range {
-            background: linear-gradient(to right, #22d3ee var(--progress, 0%), transparent var(--progress, 0%));
-            border-radius: 0.5rem;
-        }
-        .video-range::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            margin-top: -5px;
-            background-color: #fff;
-            border-radius: 50%;
-            height: 1rem;
-            width: 1rem;
-            transition: transform 0.2s ease-in-out;
-        }
-        .video-range:hover::-webkit-slider-thumb {
-            transform: scale(1.1);
-        }
-        .video-range::-moz-range-thumb {
-            border: none;
-            border-radius: 50%;
-            background-color: #fff;
-            height: 1rem;
-            width: 1rem;
-            transition: transform 0.2s ease-in-out;
-        }
-        .video-range:hover::-moz-range-thumb {
-            transform: scale(1.1);
-        }
-
-        /* Watermark styles */
-        .watermark {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            top: 0;
-            left: 0;
-            pointer-events: none;
-            overflow: hidden;
-            z-index: 25;
-        }
-        .watermark-text {
-            position: absolute;
-            color: rgba(255, 255, 255, 0.2);
-            font-size: 1.5vw;
-            font-weight: bold;
-            text-transform: uppercase;
-            white-space: nowrap;
-            animation: move-watermark 20s linear infinite;
-        }
-        @keyframes move-watermark {
-            0% { transform: translate(10%, 20%); }
-            25% { transform: translate(60%, 80%); }
-            50% { transform: translate(10%, 60%); }
-            75% { transform: translate(70%, 10%); }
-            100% { transform: translate(10%, 20%); }
-        }
-
-        /* Logo Animation */
-        .logo-path-draw {
-            stroke: url(#logo-gradient);
-            stroke-width: 6;
-            fill: none;
-            stroke-dasharray: 542;
-            stroke-dashoffset: 542;
-            animation: draw-stroke 1.5s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards;
-        }
-
-        .logo-path-fill {
-            fill: url(#logo-gradient);
-            opacity: 0;
-            animation: fade-in-fill 0.8s ease-out 1s forwards;
-        }
-        
-        .logo-text {
-            opacity: 0;
-            animation: fade-in-fill 0.8s ease-out 1.5s forwards;
-        }
-
-        @keyframes draw-stroke {
-            to {
-                stroke-dashoffset: 0;
-            }
-        }
-
-        @keyframes fade-in-fill {
-            to {
-                opacity: 1;
-            }
-        }
-
-        /* Fade-in animation */
-        .animate-fade-in-up {
-            animation: fade-in-up 0.8s ease-out forwards;
-        }
-        @keyframes fade-in-up {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        /* MiniPlayer styles */
-        .mini-player {
-            position: fixed;
-            bottom: 1.5rem;
-            right: 1.5rem;
-            z-index: 45; /* Above help button, below modals */
-            transform: translateY(200%);
-            animation: slide-in-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-
-        @keyframes slide-in-up {
-            to {
-                transform: translateY(0);
-            }
-        }
-    </style>
+    header {
+      background: #007bff;
+      color: white;
+      padding: 15px;
+      text-align: center;
+      font-size: 22px;
+      font-weight: bold;
+    }
+    nav {
+      display: flex;
+      justify-content: space-around;
+      background: #0056b3;
+    }
+    nav button {
+      flex: 1;
+      padding: 12px;
+      background: #0056b3;
+      border: none;
+      color: white;
+      cursor: pointer;
+      font-size: 15px;
+    }
+    nav button:hover {
+      background: #003f88;
+    }
+    section {
+      display: none;
+      padding: 20px;
+      background: white;
+      margin: 10px;
+      border-radius: 10px;
+      box-shadow: 0 0 6px rgba(0,0,0,0.1);
+    }
+    section.active {
+      display: block;
+    }
+    input[type="file"] {
+      margin: 10px 0;
+    }
+    img, video, audio, iframe {
+      width: 100%;
+      border-radius: 10px;
+      margin-top: 10px;
+      max-height: 60vh;
+    }
+    #aiResult {
+      background: #e8f0fe;
+      border-left: 4px solid #007bff;
+      padding: 10px;
+      margin-top: 10px;
+      white-space: pre-wrap; /* Better for AI responses */
+      word-wrap: break-word;
+    }
+    button:disabled {
+      background-color: #cccccc;
+      color: #666666;
+      cursor: not-allowed;
+    }
+  </style>
+<script type="importmap">
+{
+  "imports": {
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.29.1"
+  }
+}
+</script>
 </head>
-<body class="bg-gray-100 dark:bg-gray-900">
-    <div id="root"></div>
-    <script type="module" src="/index.tsx"></script>
+<body>
+
+  <header>🤖 Smart Media Hub — Upload & Analyze</header>
+
+  <nav>
+    <button onclick="show('upload')">⬆️ Upload</button>
+    <button onclick="show('analyze')">🧠 AI Analysis</button>
+  </nav>
+
+  <section id="upload" class="active">
+    <h2>⬆️ Upload your media</h2>
+    <input type="file" id="fileInput" accept="image/*,video/*,audio/*,.pdf,.txt,.html,.js">
+    <div id="preview"></div>
+    <button id="analyzeButton">🔍 Analyze with AI</button>
+  </section>
+
+  <section id="analyze">
+    <h2>🧠 AI Result</h2>
+    <div id="aiResult">Nta bushakashatsi burakorwa...</div>
+  </section>
+
+  <script type="module" src="ai.js"></script>
+  <script>
+    // This function is globally available
+    function show(id) {
+      document.querySelectorAll("section").forEach(sec => sec.classList.remove("active"));
+      document.getElementById(id).classList.add("active");
+    }
+    window.show = show;
+
+    const preview = document.getElementById("preview");
+    const fileInput = document.getElementById("fileInput");
+
+    fileInput.addEventListener("change", () => {
+      preview.innerHTML = "";
+      const file = fileInput.files[0];
+      if (!file) return;
+
+      const url = URL.createObjectURL(file);
+      if (file.type.startsWith("image")) {
+        preview.innerHTML = `<img src="${url}" alt="Image Preview">`;
+      } else if (file.type.startsWith("video")) {
+        preview.innerHTML = `<video controls src="${url}"></video>`;
+      } else if (file.type.startsWith("audio")) {
+        preview.innerHTML = `<audio controls src="${url}"></audio>`;
+      } else if (file.type.endsWith(".pdf")) {
+        preview.innerHTML = `<iframe src="${url}"></iframe>`;
+      } else {
+        preview.innerHTML = `<p>File: ${file.name}</p>`;
+      }
+    });
+  </script>
 </body>
 </html>
