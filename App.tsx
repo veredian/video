@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import MainApp from './components/MainApp';
 import AuthPage from './components/AuthPage';
+import Onboarding from './components/onboarding/Onboarding';
 import { authService, User } from './services/authService';
 
 export interface Settings {
@@ -16,7 +17,7 @@ export interface Settings {
 const THEMES: Settings['theme'][] = ['light', 'dark', 'sunset', 'ocean', 'space'];
 const THEME_CLASSES: Record<Settings['theme'], string> = {
     light: 'bg-gray-100',
-    dark: 'bg-gray-900',
+    dark: 'bg-black',
     sunset: 'theme-sunset',
     ocean: 'theme-ocean',
     space: 'theme-space',
@@ -24,6 +25,14 @@ const THEME_CLASSES: Record<Settings['theme'], string> = {
 
 const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(authService.getCurrentUser());
+  const [showOnboarding, setShowOnboarding] = useState(() => {
+    try {
+      // Show onboarding if it's not marked as completed
+      return localStorage.getItem('hasCompletedOnboarding') !== 'true';
+    } catch {
+      return true; // Default to showing onboarding if localStorage fails
+    }
+  });
   
   const [settings, setSettings] = useState<Settings>(() => {
     try {
@@ -93,8 +102,23 @@ const App: React.FC = () => {
     setCurrentUser(user);
   };
   
+  const handleOnboardingComplete = () => {
+    try {
+        localStorage.setItem('hasCompletedOnboarding', 'true');
+        // Clean up the step tracking as it's no longer needed
+        localStorage.removeItem('onboardingStep');
+    } catch (error) {
+        console.error("Could not save onboarding status to localStorage", error);
+    }
+    setShowOnboarding(false);
+  };
+
   if (currentUser) {
     return <MainApp user={currentUser} onLogout={handleLogout} settings={settings} onSettingsChange={setSettings} />;
+  }
+  
+  if (showOnboarding) {
+    return <Onboarding onComplete={handleOnboardingComplete} />;
   }
   
   return <AuthPage onLogin={handleLogin} />;

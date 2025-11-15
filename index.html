@@ -1,137 +1,213 @@
 <!DOCTYPE html>
-<html lang="rw">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Smart Media Hub (AI + Upload)</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f2f2f2;
-      margin: 0;
-      padding: 0;
+  <title>NV & NE ltd | Upload & Share</title>
+  <script type="importmap">
+  {
+    "imports": {
+      "react": "https://aistudiocdn.com/react@^19.2.0",
+      "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+      "react/": "https://aistudiocdn.com/react@^19.2.0/",
+      "@google/genai": "https://aistudiocdn.com/@google/genai@^1.29.1"
     }
-    header {
-      background: #007bff;
-      color: white;
-      padding: 15px;
-      text-align: center;
-      font-size: 22px;
-      font-weight: bold;
-    }
-    nav {
-      display: flex;
-      justify-content: space-around;
-      background: #0056b3;
-    }
-    nav button {
-      flex: 1;
-      padding: 12px;
-      background: #0056b3;
-      border: none;
-      color: white;
-      cursor: pointer;
-      font-size: 15px;
-    }
-    nav button:hover {
-      background: #003f88;
-    }
-    section {
-      display: none;
-      padding: 20px;
-      background: white;
-      margin: 10px;
-      border-radius: 10px;
-      box-shadow: 0 0 6px rgba(0,0,0,0.1);
-    }
-    section.active {
-      display: block;
-    }
-    input[type="file"] {
-      margin: 10px 0;
-    }
-    img, video, audio, iframe {
-      width: 100%;
-      border-radius: 10px;
-      margin-top: 10px;
-      max-height: 60vh;
-    }
-    #aiResult {
-      background: #e8f0fe;
-      border-left: 4px solid #007bff;
-      padding: 10px;
-      margin-top: 10px;
-      white-space: pre-wrap; /* Better for AI responses */
-      word-wrap: break-word;
-    }
-    button:disabled {
-      background-color: #cccccc;
-      color: #666666;
-      cursor: not-allowed;
-    }
-  </style>
-<script type="importmap">
-{
-  "imports": {
-    "react": "https://aistudiocdn.com/react@^19.2.0",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-    "react/": "https://aistudiocdn.com/react@^19.2.0/",
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.29.1"
   }
-}
-</script>
+  </script>
+  <style>
+    /* Basic styles to prevent flash of unstyled content and support theme changes */
+    body {
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+        'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+        sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        transition: background-color 0.3s, color 0.3s;
+    }
+    
+    /* From App.tsx - these are for custom themes not covered by Tailwind's dark: selector */
+    .theme-sunset {
+        background: linear-gradient(to bottom right, #ff7e5f, #feb47b);
+    }
+    .theme-ocean {
+        background: linear-gradient(to bottom right, #00c6ff, #0072ff);
+    }
+    .theme-space {
+        background: linear-gradient(to bottom, #141e30, #243b55);
+    }
+    
+    /* Styles for Logo animation */
+    .logo-path-draw {
+        fill: none;
+        stroke: url(#logo-gradient);
+        stroke-dasharray: 1000;
+        stroke-dashoffset: 1000;
+        animation: draw-logo 2s ease-in-out forwards;
+    }
+
+    .logo-path-fill {
+        fill: url(#logo-gradient);
+        opacity: 0;
+        animation: fill-logo 1.5s ease-in-out forwards 1s;
+    }
+    
+    .logo-text {
+        opacity: 0;
+        animation: fade-in 1s ease-in-out forwards 1.5s;
+    }
+
+    @keyframes draw-logo {
+      to {
+        stroke-dashoffset: 0;
+      }
+    }
+    @keyframes fill-logo {
+      to {
+        opacity: 1;
+      }
+    }
+    @keyframes fade-in {
+      to {
+        opacity: 1;
+      }
+    }
+
+    /* Animation for initial page load from AuthPage/MainApp */
+    @keyframes fade-in-up {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .animate-fade-in-up {
+        animation-name: fade-in-up;
+        animation-duration: 0.8s;
+        animation-fill-mode: both;
+        animation-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+
+    /* Custom styles for MediaPlayer component */
+    .video-range {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 100%;
+        height: 0.35rem;
+        background: rgba(255, 255, 255, 0.3);
+        outline: none;
+        border-radius: 9999px;
+        cursor: pointer;
+        transition: height 0.2s;
+    }
+    .video-range:hover {
+        height: 0.5rem;
+    }
+    .video-range::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 1rem;
+        height: 1rem;
+        background: white;
+        border-radius: 50%;
+        transform: scale(0);
+        transition: transform 0.2s;
+    }
+    .video-range:hover::-webkit-slider-thumb {
+        transform: scale(1);
+    }
+    .video-range::-moz-range-thumb {
+        width: 1rem;
+        height: 1rem;
+        background: white;
+        border-radius: 50%;
+        border: none;
+        transform: scale(0);
+        transition: transform 0.2s;
+    }
+    .video-range:hover::-moz-range-thumb {
+        transform: scale(1);
+    }
+    .video-range {
+        position: relative;
+        z-index: 1;
+        background: transparent;
+    }
+    .video-range::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        height: 100%;
+        width: var(--progress, 0%);
+        background-color: #06b6d4; /* cyan-500 */
+        border-radius: 9999px;
+        z-index: -1;
+        pointer-events: none;
+    }
+
+    /* Styles for watermark */
+    .watermark {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 200%;
+        height: 200%;
+        pointer-events: none;
+        transform: rotate(-30deg);
+        transform-origin: 25% 25%;
+        animation: watermark-scroll 30s linear infinite;
+        opacity: 0.1;
+    }
+    .watermark-text {
+        font-size: 1.5rem;
+        color: white;
+        padding: 50px;
+        display: inline-block;
+        white-space: nowrap;
+    }
+    @keyframes watermark-scroll {
+        from { transform: translate(0, 0) rotate(-30deg); }
+        to { transform: translate(-50%, -50%) rotate(-30deg); }
+    }
+    
+    /* Styles for mini player */
+    .mini-player {
+        position: fixed;
+        bottom: 1.5rem;
+        right: 1.5rem;
+        z-index: 50;
+        animation: slide-in-bottom-right 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+    @keyframes slide-in-bottom-right {
+      from {
+        opacity: 0;
+        transform: translate(50px, 50px);
+      }
+      to {
+        opacity: 1;
+        transform: translate(0,0);
+      }
+    }
+
+    /* Styles for media section container */
+    .media-section-container {
+      scrollbar-width: thin;
+      scrollbar-color: #9ca3af #f3f4f6;
+    }
+    .dark .media-section-container {
+        scrollbar-color: #4b5563 #1f2937;
+    }
+
+  </style>
 </head>
 <body>
-
-  <header>🤖 Smart Media Hub — Upload & Analyze</header>
-
-  <nav>
-    <button onclick="show('upload')">⬆️ Upload</button>
-    <button onclick="show('analyze')">🧠 AI Analysis</button>
-  </nav>
-
-  <section id="upload" class="active">
-    <h2>⬆️ Upload your media</h2>
-    <input type="file" id="fileInput" accept="image/*,video/*,audio/*,.pdf,.txt,.html,.js">
-    <div id="preview"></div>
-    <button id="analyzeButton">🔍 Analyze with AI</button>
-  </section>
-
-  <section id="analyze">
-    <h2>🧠 AI Result</h2>
-    <div id="aiResult">Nta bushakashatsi burakorwa...</div>
-  </section>
-
-  <script type="module" src="ai.js"></script>
-  <script>
-    // This function is globally available
-    function show(id) {
-      document.querySelectorAll("section").forEach(sec => sec.classList.remove("active"));
-      document.getElementById(id).classList.add("active");
-    }
-    window.show = show;
-
-    const preview = document.getElementById("preview");
-    const fileInput = document.getElementById("fileInput");
-
-    fileInput.addEventListener("change", () => {
-      preview.innerHTML = "";
-      const file = fileInput.files[0];
-      if (!file) return;
-
-      const url = URL.createObjectURL(file);
-      if (file.type.startsWith("image")) {
-        preview.innerHTML = `<img src="${url}" alt="Image Preview">`;
-      } else if (file.type.startsWith("video")) {
-        preview.innerHTML = `<video controls src="${url}"></video>`;
-      } else if (file.type.startsWith("audio")) {
-        preview.innerHTML = `<audio controls src="${url}"></audio>`;
-      } else if (file.type.endsWith(".pdf")) {
-        preview.innerHTML = `<iframe src="${url}"></iframe>`;
-      } else {
-        preview.innerHTML = `<p>File: ${file.name}</p>`;
-      }
-    });
-  </script>
+  <div id="root"></div>
+  <script type="module" src="index.tsx"></script>
 </body>
 </html>

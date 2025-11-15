@@ -6,6 +6,7 @@ import { EyeIcon } from './icons/EyeIcon';
 import { EyeSlashIcon } from './icons/EyeSlashIcon';
 import { EmailIcon } from './icons/EmailIcon';
 import { PhoneIcon } from './icons/PhoneIcon';
+import { LockClosedIcon } from './icons/LockClosedIcon';
 import LanguageSwitcher from './LanguageSwitcher';
 import { useTranslation } from '../i18n/LanguageContext';
 import VerificationModal from './VerificationModal';
@@ -119,14 +120,14 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-white flex flex-col items-center justify-center p-4 font-sans">
+    <div className="min-h-screen dark:text-white flex flex-col items-center justify-center p-4 font-sans">
         <div className="absolute top-4 right-4 z-10">
             <LanguageSwitcher />
         </div>
         <div className="w-full max-w-md">
             <header className="text-center mb-8">
                 <div className="flex items-center justify-center gap-3 mb-4 opacity-0 animate-fade-in-up" style={{ animationDelay: '100ms' }}>
-                    <Logo className="w-24 h-auto" />
+                    <Logo className="w-28 h-auto" />
                     <h1 className="text-5xl sm:text-6xl font-bold tracking-tight bg-gradient-to-r from-cyan-500 to-blue-500 text-transparent bg-clip-text">
                         {t('home.title')}
                     </h1>
@@ -146,7 +147,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
                     </button>
                 </div>
 
-                <form onSubmit={handleAuthAction} className="space-y-6">
+                <form onSubmit={handleAuthAction} className="space-y-5">
                     <div className="flex gap-2 p-1 bg-gray-200/50 dark:bg-gray-900/50 rounded-lg">
                         <button type="button" onClick={() => switchAuthMethod('email')} className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-colors duration-200 ${authMethod === 'email' ? 'bg-cyan-500 text-white' : 'bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300'}`}>
                            <EmailIcon className="w-5 h-5" /> {t('auth.email')}
@@ -157,24 +158,31 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
                     </div>
 
                     <div>
-                        <label htmlFor="identifier" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            {authMethod === 'email' ? t('auth.emailLabel') : t('auth.phoneLabel')}
-                        </label>
-                        <input
-                            id="identifier"
-                            name="identifier"
-                            type={authMethod === 'email' ? 'email' : 'tel'}
-                            autoComplete={authMethod === 'email' ? 'email' : 'tel'}
-                            required
-                            value={identifier}
-                            onChange={(e) => setIdentifier(e.target.value)}
-                            className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-cyan-500 focus:border-cyan-500"
-                            placeholder={authMethod === 'email' ? t('auth.emailPlaceholder') : t('auth.phonePlaceholder')}
-                        />
+                        <div className="relative">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                {authMethod === 'email' 
+                                    ? <EmailIcon className="h-5 w-5 text-gray-400" /> 
+                                    : <PhoneIcon className="h-5 w-5 text-gray-400" />
+                                }
+                            </div>
+                            <input
+                                id="identifier"
+                                name="identifier"
+                                type={authMethod === 'email' ? 'email' : 'tel'}
+                                autoComplete={authMethod === 'email' ? 'email' : 'tel'}
+                                required
+                                value={identifier}
+                                onChange={(e) => setIdentifier(e.target.value)}
+                                className="w-full pl-10 pr-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-cyan-500 focus:border-cyan-500"
+                                placeholder={authMethod === 'email' ? t('auth.emailPlaceholder') : t('auth.phonePlaceholder')}
+                            />
+                        </div>
                     </div>
                     <div>
-                        <label htmlFor="password"  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('auth.passwordLabel')}</label>
                         <div className="relative">
+                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <LockClosedIcon className="h-5 w-5 text-gray-400" />
+                            </div>
                             <input
                                 id="password"
                                 name="password"
@@ -184,7 +192,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
                                 minLength={6}
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                className="w-full px-3 py-2 pr-10 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-cyan-500 focus:border-cyan-500"
+                                className="w-full pl-10 pr-10 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-cyan-500 focus:border-cyan-500"
                                 placeholder={t('auth.passwordPlaceholder')}
                             />
                             <button
@@ -224,7 +232,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
                     <button
                         type="submit"
                         disabled={isLoading}
-                        className="w-full flex justify-center items-center bg-cyan-500 hover:bg-cyan-600 text-black font-bold py-2 px-4 rounded-md transition-all duration-300 transform hover:scale-105 shadow-lg shadow-cyan-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full flex justify-center items-center bg-cyan-500 hover:bg-cyan-600 text-black font-bold py-2.5 px-4 rounded-md transition-all duration-300 transform hover:scale-105 shadow-lg shadow-cyan-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         {isLoading && <SpinnerIcon className="w-5 h-5 mr-2 animate-spin" />}
                         {mode === 'login' ? t('auth.logIn') : t('auth.createAccount')}
